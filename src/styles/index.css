@@ -1,0 +1,276 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --atlas-black: #0a0a0a;
+  --atlas-charcoal: #1a1a1a;
+  --atlas-surface: #242424;
+  --atlas-burgundy: #5a0f1d;
+  --atlas-gold: #c4a661;
+  --atlas-gold-light: #e6c885;
+  --atlas-silver: #e0e0e0;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background-color: var(--atlas-black);
+  color: var(--atlas-silver);
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Playfair Display', serif;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--atlas-cream);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--atlas-gold);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--atlas-burgundy);
+}
+
+/* Moroccan pattern overlay */
+.moroccan-overlay {
+  background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 0L60 30L30 60L0 30z' fill='none' stroke='%23C9A961' stroke-opacity='0.1' stroke-width='1'/%3E%3C/svg%3E");
+  background-size: 30px 30px;
+}
+
+/* Glass effect */
+.glass {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+/* Gold gradient button */
+.btn-gold {
+  background: linear-gradient(135deg, var(--atlas-gold) 0%, var(--atlas-gold-light) 50%, var(--atlas-gold) 100%);
+  color: var(--atlas-charcoal);
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.btn-gold:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(201, 169, 97, 0.4);
+}
+
+/* Burgundy button */
+.btn-burgundy {
+  background: var(--atlas-burgundy);
+  color: white;
+  transition: all 0.3s ease;
+}
+
+.btn-burgundy:hover {
+  background: var(--atlas-burgundy-dark);
+  transform: translateY(-2px);
+}
+
+/* Card styles */
+.card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+}
+
+.card:hover {
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+}
+
+/* Loading animation */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.loading-shimmer {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+/* 3D car canvas container */
+.car-canvas-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 400px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+}
+
+/* Product card selection */
+.product-card {
+  border: 2px solid transparent;
+  transition: all 0.3s ease;
+}
+
+.product-card.selected {
+  border-color: var(--atlas-gold);
+  box-shadow: 0 0 0 4px rgba(201, 169, 97, 0.2);
+}
+
+.product-card:hover {
+  transform: translateY(-4px);
+}
+
+/* Color swatch */
+.color-swatch {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 3px solid transparent;
+}
+
+.color-swatch:hover {
+  transform: scale(1.15);
+}
+
+.color-swatch.selected {
+  border-color: var(--atlas-gold);
+  box-shadow: 0 0 0 3px rgba(201, 169, 97, 0.4);
+}
+
+/* Step indicator */
+.step-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.step-indicator.active {
+  background: var(--atlas-gold);
+  color: var(--atlas-charcoal);
+}
+
+.step-indicator.completed {
+  background: var(--atlas-burgundy);
+  color: white;
+}
+
+.step-indicator.pending {
+  background: #e0e0e0;
+  color: #999;
+}
+
+/* Fade in animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in {
+  animation: fadeIn 0.5s ease forwards;
+}
+
+/* Pulse animation for stars */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.star-pulse {
+  animation: pulse 2s infinite;
+}
+
+/* Location card */
+.location-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.location-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 50%);
+  z-index: 1;
+}
+
+.location-card:hover {
+  transform: scale(1.02);
+}
+
+.location-card.selected {
+  ring: 4px solid var(--atlas-gold);
+}
+
+/* Season selector */
+.season-btn {
+  padding: 8px 16px;
+  border-radius: 20px;
+  border: 2px solid transparent;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.season-btn:hover {
+  border-color: var(--atlas-gold);
+}
+
+.season-btn.active {
+  background: var(--atlas-gold);
+  color: var(--atlas-charcoal);
+}
+
+/* Quote summary */
+.quote-line {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid #eee;
+}
+
+.quote-line:last-child {
+  border-bottom: none;
+}
+
+.quote-total {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--atlas-burgundy);
+}
