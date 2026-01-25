@@ -179,8 +179,103 @@ function Car({ vehicle, color, wheelColor }) {
   return <ProceduralCarModel color={color} wheelColor={wheelColor} bodyStyle={vehicle.bodyStyle} />
 }
 
+// Dynamic Lighting Component
+function DynamicLighting({ timeOfDay, season }) {
+  const lightingPresets = {
+    dawn: {
+      ambient: { intensity: 0.3, color: '#8B7BC1' },
+      key: { intensity: 1.2, color: '#FFB347', position: [15, 10, 15] },
+      fill: { intensity: 0.4, color: '#6B8EE3', position: [-10, 5, -10] },
+      rim: { intensity: 1.5, color: '#FF6B9D', position: [-5, 5, 5] }
+    },
+    day: {
+      ambient: { intensity: 0.5, color: '#ffffff' },
+      key: { intensity: 2, color: '#FFF8E7', position: [10, 15, 10] },
+      fill: { intensity: 1, color: '#87CEEB', position: [-10, 5, -10] },
+      rim: { intensity: 3, color: '#ffffff', position: [-5, 5, 5] }
+    },
+    sunset: {
+      ambient: { intensity: 0.4, color: '#FF7F50' },
+      key: { intensity: 1.5, color: '#FF4500', position: [12, 8, 12] },
+      fill: { intensity: 0.6, color: '#FF69B4', position: [-10, 5, -10] },
+      rim: { intensity: 2, color: '#FF8C00', position: [-5, 5, 5] }
+    },
+    night: {
+      ambient: { intensity: 0.2, color: '#4B0082' },
+      key: { intensity: 0.8, color: '#B0C4DE', position: [5, 20, 5] },
+      fill: { intensity: 0.3, color: '#483D8B', position: [-10, 5, -10] },
+      rim: { intensity: 1, color: '#87CEEB', position: [-5, 5, 5] }
+    }
+  }
+
+  const seasonModifiers = {
+    spring: { multiplier: 1.1 },
+    summer: { multiplier: 1.2 },
+    autumn: { multiplier: 0.9 },
+    winter: { multiplier: 0.8 }
+  }
+
+  const lighting = lightingPresets[timeOfDay] || lightingPresets.day
+  const modifier = seasonModifiers[season] || seasonModifiers.summer
+
+  return (
+    <>
+      <ambientLight
+        intensity={lighting.ambient.intensity * modifier.multiplier}
+        color={lighting.ambient.color}
+      />
+
+      <spotLight
+        position={lighting.key.position}
+        angle={0.2}
+        penumbra={1}
+        intensity={lighting.key.intensity * modifier.multiplier}
+        color={lighting.key.color}
+        castShadow
+        shadow-bias={-0.0001}
+      />
+
+      <pointLight
+        position={lighting.fill.position}
+        intensity={lighting.fill.intensity * modifier.multiplier}
+        color={lighting.fill.color}
+      />
+
+      <spotLight
+        position={lighting.rim.position}
+        intensity={lighting.rim.intensity * modifier.multiplier}
+        color={lighting.rim.color}
+        angle={0.5}
+        penumbra={1}
+      />
+    </>
+  )
+}
+
+// Dynamic Environment Component
+function DynamicEnvironment({ location, timeOfDay }) {
+  const environmentPresets = {
+    casablanca: { preset: 'city', background: '#1a3a52' },
+    marrakech: { preset: 'sunset', background: '#8B4513' },
+    atlas: { preset: 'dawn', background: '#4682B4' },
+    sahara: { preset: 'sunset', background: '#F4A460' },
+    tangier: { preset: 'city', background: '#2F4F4F' },
+    chefchaouen: { preset: 'dawn', background: '#4169E1' }
+  }
+
+  const env = environmentPresets[location] || environmentPresets.casablanca
+  const preset = timeOfDay === 'night' ? 'night' : env.preset
+
+  return (
+    <>
+      <Environment preset={preset} />
+      <color attach="background" args={[env.background]} />
+    </>
+  )
+}
+
 export default function Car3DViewer() {
-  const { vehicle, color, wheelColor } = useStore()
+  const { vehicle, color, wheelColor, selectedLocation, selectedSeason, timeOfDay } = useStore()
 
   return (
     <div className="w-full h-full bg-atlas-black">
@@ -195,30 +290,8 @@ export default function Car3DViewer() {
       >
         <PerspectiveCamera makeDefault position={[6, 2, 6]} fov={45} />
 
-        {/* Cinematic Lighting Setup */}
-        <ambientLight intensity={0.5} color="#ffffff" />
-
-        {/* Key Light */}
-        <spotLight
-          position={[10, 15, 10]}
-          angle={0.2}
-          penumbra={1}
-          intensity={2}
-          castShadow
-          shadow-bias={-0.0001}
-        />
-
-        {/* Fill Light */}
-        <pointLight position={[-10, 5, -10]} intensity={1} color="#blue" />
-
-        {/* Rim Light for contour */}
-        <spotLight
-          position={[-5, 5, 5]}
-          intensity={3}
-          color="#ffffff"
-          angle={0.5}
-          penumbra={1}
-        />
+        {/* Dynamic Lighting based on time of day and season */}
+        <DynamicLighting timeOfDay={timeOfDay} season={selectedSeason} />
 
         <Suspense fallback={null}>
           <Float
@@ -234,11 +307,13 @@ export default function Car3DViewer() {
             />
           </Float>
 
-          {/* Environment Reflection */}
-          <Environment preset="city" />
+          {/* Dynamic Environment based on location and time */}
+          <DynamicEnvironment location={selectedLocation} timeOfDay={timeOfDay} />
 
           {/* Background Stars for subtle depth if dark */}
-          <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />
+          {timeOfDay === 'night' && (
+            <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />
+          )}
 
           <ContactShadows
             resolution={1024}
@@ -251,14 +326,16 @@ export default function Car3DViewer() {
         </Suspense>
 
         <OrbitControls
-          enablePan={false}
+          enablePan={true}
+          panSpeed={0.8}
           enableZoom={true}
-          minDistance={4}
-          maxDistance={12}
-          minPolarAngle={Math.PI / 4} // Prevent going too high
-          maxPolarAngle={Math.PI / 2.1} // Prevent going below ground
+          minDistance={2}
+          maxDistance={20}
+          minPolarAngle={0} // Allow view from directly above
+          maxPolarAngle={Math.PI} // Allow view from all angles including underneath
           autoRotate={!vehicle} // Iterate if no vehicle loaded
           autoRotateSpeed={0.5}
+          enableDamping={true}
           dampingFactor={0.05}
         />
 

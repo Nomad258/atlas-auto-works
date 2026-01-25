@@ -1,6 +1,6 @@
 
 import React from 'react'
-import { MapPin, Sun, Moon, Cloud, Snowflake, Leaf, Flower2 } from 'lucide-react'
+import { MapPin, Sun, Moon, Cloud, Snowflake, Leaf, Flower2, Clock } from 'lucide-react'
 import useStore from '../store/useStore'
 import { useTranslation } from '../i18n/useTranslation'
 

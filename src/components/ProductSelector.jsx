@@ -4,6 +4,25 @@ import { Check, Info } from 'lucide-react'
 import useStore from '../store/useStore'
 import { useTranslation } from '../i18n/useTranslation'
 
+// Utility function to adjust color brightness
+function adjustBrightness(hexColor, percent) {
+  const hex = hexColor.replace('#', '')
+  const r = parseInt(hex.substring(0, 2), 16)
+  const g = parseInt(hex.substring(2, 4), 16)
+  const b = parseInt(hex.substring(4, 6), 16)
+
+  const adjust = (value) => {
+    const adjusted = value + (value * percent) / 100
+    return Math.max(0, Math.min(255, Math.round(adjusted)))
+  }
+
+  const newR = adjust(r).toString(16).padStart(2, '0')
+  const newG = adjust(g).toString(16).padStart(2, '0')
+  const newB = adjust(b).toString(16).padStart(2, '0')
+
+  return `#${newR}${newG}${newB}`
+}
+
 function ProductCard({ product, isSelected, onSelect, type }) {
   const { t, formatCurrency } = useTranslation()
 
@@ -25,12 +44,34 @@ function ProductCard({ product, isSelected, onSelect, type }) {
       )}
 
       <div className="p-4">
-        {/* Color swatch for paints/wraps */}
-        {(type === 'paints' || type === 'wraps') && product.color && (
+        {/* Product Image or Color Swatch */}
+        {product.image ? (
+          <div className="relative w-full h-32 rounded-lg mb-4 overflow-hidden bg-atlas-surface">
+            <img
+              src={`/products/${type}/${product.image}`}
+              alt={product.name}
+              className="w-full h-full object-cover transition-transform group-hover:scale-110"
+              loading="lazy"
+              onError={(e) => {
+                // Fallback to gradient if image fails
+                e.target.style.display = 'none'
+                e.target.parentElement.style.background = product.color
+                  ? `linear-gradient(135deg, ${product.color} 0%, ${adjustBrightness(product.color, -20)} 100%)`
+                  : 'linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 100%)'
+              }}
+            />
+            {/* Overlay gradient for better text visibility */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+          </div>
+        ) : (type === 'paints' || type === 'wraps') && product.color ? (
           <div
-            className="w-full h-24 rounded-lg mb-4 shadow-inner flex-shrink-0 border border-white/10"
+            className="w-full h-32 rounded-lg mb-4 shadow-inner flex-shrink-0 border border-white/10"
             style={{ backgroundColor: product.color }}
           />
+        ) : (
+          <div className="w-full h-32 rounded-lg mb-4 bg-gradient-to-br from-atlas-surface to-atlas-charcoal border border-white/10 flex items-center justify-center">
+            <span className="text-white/30 text-sm">{product.type || 'Product'}</span>
+          </div>
         )}
 
         {/* Product info */}
@@ -38,7 +79,7 @@ function ProductCard({ product, isSelected, onSelect, type }) {
           {product.name}
         </h4>
 
-        <div className="space-y-1 mb-4">
+        <div className="space-y-2 mb-4">
           {product.finish && (
             <p className="text-xs text-gray-400 capitalize">{product.finish}</p>
           )}
@@ -50,6 +91,14 @@ function ProductCard({ product, isSelected, onSelect, type }) {
           )}
           {product.stars && (
             <p className="text-xs text-gray-400">{product.stars} stars</p>
+          )}
+          {product.warranty && (
+            <span className="inline-block px-2 py-1 bg-atlas-gold/20 text-atlas-gold text-xs font-medium rounded">
+              {product.warranty} Warranty
+            </span>
+          )}
+          {product.materials && (
+            <p className="text-xs text-gray-500">Materials: {product.materials.join(', ')}</p>
           )}
         </div>
 
