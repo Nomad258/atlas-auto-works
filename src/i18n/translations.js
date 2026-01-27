@@ -1,32 +1,95 @@
 export const translations = {
   fr: {
-    // Navigation
-    nav: {
-      home: 'Accueil',
-      configurator: 'Configurateur',
-      about: 'À propos',
-      contact: 'Contact',
-      quote: 'Devis',
-      booking: 'Réservation'
-    },
-
-    // Hero Section
-    hero: {
-      title: 'Transformez Votre Véhicule En Chef-d\'œuvre',
-      subtitle: 'PERSONNALISATION PREMIUM',
-      description: 'Atlas Auto Works concrétise votre vision avec des solutions de personnalisation automobile d\'élite. De la peinture sur mesure aux ciels étoilés, nous créons l\'unique.',
-      cta: 'Commencer la Configuration',
+    // Home Page
+    home: {
+      hero: {
+        title: 'Redéfinissez la',
+        highlight: 'Perfection.',
+        subtitle: 'Découvrez le futur de la personnalisation automobile. Visualisez votre configuration de rêve avec un réalisme cinématique avant le moindre changement.',
+        badge: 'L\'Expérience de Configuration Ultime',
+        scroll: 'Défiler'
+      },
       stats: {
-        vehicles: 'Véhicules Transformés',
-        clients: 'Satisfaction Client',
-        experience: 'Années d\'Expérience'
+        vehicles: 'Véhicules Configurés',
+        options: 'Options de Personnalisation',
+        studios: 'Studios Partenaires',
+        satisfaction: 'Satisfaction Client'
+      },
+      features: {
+        title: 'Maîtrisez l\'Art de la',
+        highlight: 'Personnalisation Automobile',
+        subtitle: 'Chaque détail compte. Notre configurateur vous donne un contrôle total sur chaque aspect esthétique de votre véhicule.',
+        cta: 'Voir Toutes les Fonctionnalités'
+      },
+      whyUs: {
+        title: 'Le Standard Atlas',
+        subtitle: 'Nous ne faisons pas que modifier des voitures; nous les élevons. En utilisant les meilleurs matériaux et une ingénierie de précision, nous assurons une exécution parfaite de votre vision.',
+        quality: {
+          title: 'Qualité OEM',
+          desc: 'Matériaux qui égalent ou dépassent les standards d\'usine.'
+        },
+        craftsmanship: {
+          title: 'Savoir-faire Maître',
+          desc: 'Exécuté par des techniciens certifiés avec des décennies d\'expérience.'
+        },
+        timeline: {
+          title: 'Planification Précise',
+          desc: 'Délais clairs et mises à jour tout au long du processus.'
+        },
+        quote: '"La perfection n\'est pas un acte, mais une habitude."'
+      },
+      cta: {
+        title: 'Prêt à Construire Votre Héritage ?',
+        subtitle: 'Rejoignez le cercle exclusif des connaisseurs automobiles.',
+        button: 'COMMENCER VOTRE CONFIGURATION'
+      },
+      vin: {
+        placeholder: 'Entrez VIN ou Nom du Modèle...',
+        button: 'COMMENCER LA CONFIGURATION',
+        quickSelect: {
+          m4: 'BMW M4',
+          gt3: 'Porsche GT3',
+          g63: 'G-Wagon'
+        }
       }
     },
 
-    // Features
+    // Navigation
+    nav: {
+      home: 'Accueil',
+      services: 'SERVICES',
+      studio: 'STUDIO',
+      contact: 'CONTACT',
+      start: 'COMMENCER',
+      exit: 'QUITTER LE STUDIO',
+      currentBuild: 'Configuration Actuelle',
+      year: 'Année'
+    },
+
+    // Configurator Page
+    configurator: {
+      title: 'Configurateur',
+      steps: {
+        vehicle: 'Véhicule',
+        visualization: 'Visualisation',
+        quote: 'Devis',
+        booking: 'Réservation'
+      },
+      selection: {
+        title: 'Choisissez Votre Canale',
+        or: 'Ou entrez votre VIN directement',
+        decode: 'DÉCODER',
+        vinPlaceholder: 'VIN...'
+      },
+      panel: {
+        step: 'Étape',
+        prev: 'PRÉC',
+        next: 'ÉTAPE SUIVANTE'
+      }
+    },
+
+    // Features (Updated)
     features: {
-      title: 'Nos Services',
-      subtitle: 'Une expertise inégalée pour chaque détail de votre véhicule',
       paint: {
         title: 'Peinture & Wraps',
         description: 'Finitions exclusives et protection durable avec nos peintures et films premium.'
@@ -53,27 +116,6 @@ export const translations = {
       }
     },
 
-    // Configurator Page
-    configurator: {
-      title: 'Configurateur',
-      steps: {
-        vehicle: 'Véhicule',
-        visualization: 'Visualisation',
-        quote: 'Devis',
-        booking: 'Réservation' // Added Booking step translation
-      }
-    },
-
-    // VIN Decoder
-    vin: {
-      title: 'Identifiez votre Véhicule',
-      subtitle: 'Entrez votre VIN pour une expérience personnalisée',
-      placeholder: 'Entrez votre numéro VIN...',
-      decode: 'Configurer',
-      help: 'Le VIN se trouve sur votre carte grise ou pare-brise.',
-      error: 'VIN invalide. Veuillez vérifier et réessayer.'
-    },
-
     // Products
     products: {
       details: 'Détails du produit',
@@ -86,14 +128,6 @@ export const translations = {
         labor: 'main d\'œuvre',
         warranty: 'garantie',
         included: 'Inclus'
-      },
-      categories: {
-        paint: 'Peinture',
-        bodykit: 'Carrosserie',
-        wheels: 'Jantes',
-        interior: 'Intérieur',
-        starlight: 'Ciel Étoilé',
-        accessories: 'Accessoires'
       }
     },
 
@@ -194,9 +228,59 @@ export const translations = {
       }
     },
 
-    // Viewer 3D
-    viewer3d: {
-      loading: 'Chargement du modèle 3D...'
+    // Confirmation Page
+    confirmation: {
+      title: 'Réservation Confirmée !',
+      subtitle: 'Votre rendez-vous a été programmé. Nous avons envoyé une confirmation à votre email.',
+      noBooking: {
+        title: 'Aucune Réservation Trouvée',
+        subtitle: 'Commencez une nouvelle configuration pour prendre rendez-vous',
+        button: 'Aller à l\'Accueil'
+      },
+      code: {
+        label: 'Code de Confirmation',
+        note: 'Veuillez conserver ce code pour vos dossiers'
+      },
+      details: {
+        title: 'Détails du Rendez-vous',
+        dateLabel: 'Date & Heure',
+        locationLabel: 'Lieu',
+        contactLabel: 'Contact',
+        vehicleLabel: 'Véhicule'
+      },
+      quote: {
+        title: 'Résumé du Devis',
+        partsSubtotal: 'Sous-total Pièces',
+        labor: 'Main d\'œuvre',
+        rushFee: 'Frais d\'urgence',
+        vat: 'TVA (20%)',
+        total: 'Total',
+        estimated: 'Fin estimée'
+      },
+      next: {
+        title: 'Et Ensuite ?',
+        step1: {
+          title: 'Vérifiez Vos Emails',
+          desc: 'Nous avons envoyé un email de confirmation avec tous les détails'
+        },
+        step2: {
+          title: 'Préparez Votre Véhicule',
+          desc: 'Assurez-vous que votre voiture est propre et retirez vos effets personnels'
+        },
+        step3: {
+          title: 'Rendez-nous Visite',
+          desc: 'Amenez votre véhicule à {location} le {date}'
+        }
+      },
+      contact: {
+        title: 'Besoin de Changements ?',
+        desc: 'Contactez-nous au moins 24 heures avant votre rendez-vous pour replanifier ou annuler.'
+      },
+      actions: {
+        download: 'Télécharger Confirmation',
+        share: 'Partager',
+        new: 'Commencer une Nouvelle Configuration'
+      }
     },
 
     // Common
@@ -206,7 +290,9 @@ export const translations = {
       back: 'Retour',
       confirm: 'Confirmer',
       cancel: 'Annuler',
-      loading: 'Chargement...'
+      loading: 'Chargement...',
+      download: 'Télécharger',
+      share: 'Partager'
     },
 
     // Footer

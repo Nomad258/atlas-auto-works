@@ -1,11 +1,14 @@
 
-import React, { useRef, useMemo, Suspense } from 'react'
-import { Canvas, useFrame } from '@react-three/fiber'
+import React, { useRef, useMemo, Suspense, useState, useCallback, useEffect } from 'react'
+import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { OrbitControls, Environment, ContactShadows, Float, useGLTF, PerspectiveCamera, Stars } from '@react-three/drei'
 import * as THREE from 'three'
 import useStore from '../store/useStore'
 import { getCarModelPath } from '../utils/carModelMapping'
 import { useTranslation } from '../i18n/useTranslation'
+import { ZoomIn, ZoomOut, RotateCcw } from 'lucide-react'
+import { wheelConfigs, tireConfigs, wheelPositions } from '../config/wheelConfigs'
+import { bodykitConfigs, accessoryConfigs } from '../config/partConfigs'
 
 // Error boundary for GLB loading failures
 class GLBErrorBoundary extends React.Component {
@@ -33,13 +36,42 @@ class GLBErrorBoundary extends React.Component {
   }
 }
 
+// Loading indicator - spinning wireframe box while model loads
+function LoadingCarPlaceholder() {
+  const meshRef = useRef()
+
+  useFrame((state) => {
+    if (meshRef.current) {
+      meshRef.current.rotation.y += 0.02
+    }
+  })
+
+  return (
+    <mesh ref={meshRef} position={[0, 0.5, 0]}>
+      <boxGeometry args={[3, 1, 1.5]} />
+      <meshBasicMaterial color="#C4A661" wireframe />
+    </mesh>
+  )
+}
+
 // Car model loader - attempts to load actual car GLB files
-function LoadedCarModel({ modelPath, color, wheelColor }) {
+function LoadedCarModel({ modelPath, color, wheelColor, hideWheels }) {
+  console.log('🚗 Loading car model from:', modelPath)
+
   // useGLTF suspends while loading and throws on error (caught by ErrorBoundary)
   const gltf = useGLTF(modelPath)
 
   // If model loaded successfully, render it
   if (gltf && gltf.scene) {
+    // Calculate bounding box to auto-scale and position
+    const box = new THREE.Box3().setFromObject(gltf.scene)
+    const size = box.getSize(new THREE.Vector3())
+    const center = box.getCenter(new THREE.Vector3())
+
+    // Auto-scale to fit nicely (target ~4 units length)
+    const maxDim = Math.max(size.x, size.y, size.z)
+    const autoScale = maxDim > 0 ? 4 / maxDim : 1
+
     const scene = gltf.scene.clone()
 
     // Apply color to car body materials
@@ -48,18 +80,31 @@ function LoadedCarModel({ modelPath, color, wheelColor }) {
         // Clone material to avoid affecting other instances
         child.material = child.material.clone()
 
-        // Smart material detection
+        // Smart material detection - be more aggressive about finding body panels
         const name = child.name.toLowerCase()
+        const matName = child.material.name ? child.material.name.toLowerCase() : ''
+
         const isBody =
           name.includes('body') ||
           name.includes('paint') ||
           name.includes('shell') ||
-          (child.material.name && child.material.name.toLowerCase().includes('paint'))
+          name.includes('exterior') ||
+          name.includes('hood') ||
+          name.includes('door') ||
+          name.includes('fender') ||
+          name.includes('bumper') ||
+          name.includes('trunk') ||
+          name.includes('roof') ||
+          matName.includes('paint') ||
+          matName.includes('car') ||
+          matName.includes('body')
 
         const isWindow = name.includes('glass') || name.includes('window') || child.material.transparent
         const isWheel = name.includes('wheel') || name.includes('rim') || name.includes('tire')
+        const isLight = name.includes('light') || name.includes('lamp') || name.includes('headlight')
+        const isChrome = name.includes('chrome') || name.includes('metal') || name.includes('grill')
 
-        if (isBody && !isWindow && !isWheel) {
+        if (isBody && !isWindow && !isWheel && !isLight && !isChrome) {
           child.material.color = new THREE.Color(color)
           child.material.metalness = 0.6
           child.material.roughness = 0.2
@@ -71,14 +116,19 @@ function LoadedCarModel({ modelPath, color, wheelColor }) {
         if (name.includes('rim') && wheelColor) {
           child.material.color = new THREE.Color(wheelColor)
         }
+
+        // Hide original wheels if custom wheels are active
+        if (hideWheels && isWheel) {
+          child.visible = false
+        }
       }
     })
 
     return (
       <primitive
         object={scene}
-        scale={1.6}
-        position={[0, -0.65, 0]}
+        scale={autoScale}
+        position={[0, -center.y * autoScale, 0]}
         rotation={[0, Math.PI / 5, 0]}
       />
     )
@@ -87,124 +137,181 @@ function LoadedCarModel({ modelPath, color, wheelColor }) {
   return null
 }
 
-// Procedural car model - fallback
-function ProceduralCarModel({ color, wheelColor, bodyStyle = 'Coupe' }) {
-  const groupRef = useRef()
-  const bodyColor = useMemo(() => new THREE.Color(color), [color])
-  const wheelColorObj = useMemo(() => new THREE.Color(wheelColor || '#1a1a1a'), [wheelColor])
+// Wheel model loader - loads individual wheel GLB models
+function LoadedWheel({ glbPath, position, rotation, color, scale = 1.0 }) {
+  const gltf = useGLTF(glbPath)
 
-  useFrame((state) => {
-    if (groupRef.current) {
-      // Gentle floating animation handled by Float component, but we can add subtle idle movement here if needed
-    }
-  })
+  const clonedScene = useMemo(() => {
+    if (!gltf?.scene) return null
+    const scene = gltf.scene.clone()
 
-  // Dimensions
-  const length = 4.2
-  const width = 1.8
-  const height = 1.2
+    // Apply wheel color to materials
+    scene.traverse((child) => {
+      if (child.isMesh && child.material) {
+        child.material = child.material.clone()
+
+        const name = child.name.toLowerCase()
+        // If it's a rim part, color it
+        if ((name.includes('rim') || name.includes('spoke') || name.includes('wheel'))) {
+          if (color) {
+            child.material.color = new THREE.Color(color)
+            child.material.metalness = 0.85
+            child.material.roughness = 0.15
+          }
+        }
+      }
+    })
+
+    return scene
+  }, [gltf, color])
+
+  if (!clonedScene) return null
 
   return (
-    <group ref={groupRef} position={[0, 0.3, 0]}>
-      {/* Car body */}
-      <mesh position={[0, height / 2, 0]} castShadow receiveShadow>
-        <boxGeometry args={[length, height * 0.6, width]} />
-        <meshStandardMaterial
-          color={bodyColor}
-          metalness={0.7}
-          roughness={0.2}
-          envMapIntensity={1.5}
-        />
-      </mesh>
-
-      {/* Cabin/roof */}
-      <mesh position={[-0.2, height * 0.9, 0]} castShadow receiveShadow>
-        <boxGeometry args={[length * 0.5, height * 0.5, width * 0.85]} />
-        <meshStandardMaterial
-          color="#111"
-          metalness={0.9}
-          roughness={0.0}
-        />
-      </mesh>
-
-      {/* Wheels */}
-      <Wheel position={[length * 0.35, 0, width * 0.5]} color={wheelColorObj} />
-      <Wheel position={[length * 0.35, 0, -width * 0.5]} color={wheelColorObj} />
-      <Wheel position={[-length * 0.35, 0, width * 0.5]} color={wheelColorObj} />
-      <Wheel position={[-length * 0.35, 0, -width * 0.5]} color={wheelColorObj} />
-    </group>
+    <primitive
+      object={clonedScene}
+      position={position}
+      rotation={rotation}
+      scale={scale}
+    />
   )
 }
 
-function Wheel({ position, color }) {
+// Wheel Assembly - renders 4 wheels with selected rim model
+function WheelAssembly({ wheelProductId, wheelColor, selectedWheel }) {
+  // Use selectedWheel object first (from Turso), fallback to hardcoded config
+  const glbPath = selectedWheel?.glb_path || selectedWheel?.glbPath || (wheelProductId && wheelConfigs[wheelProductId]?.glbPath)
+
+  if (!glbPath) return null
+
+  const positions = wheelPositions
+
   return (
-    <group position={position} rotation={[0, 0, Math.PI / 2]}>
-      <mesh castShadow receiveShadow>
-        <cylinderGeometry args={[0.35, 0.35, 0.25, 32]} />
-        <meshStandardMaterial color="#111" roughness={0.8} />
-      </mesh>
-      <mesh position={[0, 0.05, 0]} rotation={[0, 0, 0]}>
-        <cylinderGeometry args={[0.2, 0.2, 0.26, 16]} />
-        <meshStandardMaterial color={color} metalness={0.8} roughness={0.2} />
-      </mesh>
-    </group>
-  )
-}
-
-function Car({ vehicle, color, wheelColor }) {
-  const modelPath = vehicle ? getCarModelPath(vehicle) : null
-
-  if (!vehicle) {
-    return <ProceduralCarModel color={color} wheelColor={wheelColor} />
-  }
-
-  if (modelPath) {
-    return (
-      <GLBErrorBoundary
-        Fallback={ProceduralCarModel}
-        color={color}
-        wheelColor={wheelColor}
-      >
-        <Suspense fallback={<ProceduralCarModel color={color} wheelColor={wheelColor} />}>
-          <LoadedCarModel
-            modelPath={modelPath}
-            color={color}
-            wheelColor={wheelColor}
+    <group>
+      {Object.entries(positions).map(([key, pos]) => (
+        <Suspense key={key} fallback={null}>
+          <LoadedWheel
+            glbPath={glbPath}
+            position={pos.position}
+            rotation={pos.rotation}
+            color={wheelColor}
+            scale={selectedWheel?.scale_factor || 1.0}
           />
         </Suspense>
-      </GLBErrorBoundary>
-    )
-  }
+      ))}
+    </group>
+  )
+}
 
-  return <ProceduralCarModel color={color} wheelColor={wheelColor} bodyStyle={vehicle.bodyStyle} />
+// ... existing PartModel ...
+
+function Car({ vehicle, color, wheelColor, wheelProductId, selectedWheel, bodykitProductId, accessoryProductIds, caliperColor }) {
+  const modelPath = vehicle ? getCarModelPath(vehicle) : null
+
+  // Debug log
+  useEffect(() => {
+    if (vehicle) {
+      console.log('🚙 Vehicle selected:', vehicle.make, vehicle.model)
+      console.log('🔗 Model path:', modelPath)
+    }
+  }, [vehicle, modelPath])
+
+  // Car body
+  const carBody = useMemo(() => {
+    if (!vehicle) {
+      console.log('📦 No vehicle - showing procedural model')
+      return <ProceduralCarModel color={color} wheelColor={wheelColor} />
+    }
+
+    if (modelPath) {
+      console.log('📦 Loading GLB model:', modelPath)
+      return (
+        <GLBErrorBoundary
+          Fallback={ProceduralCarModel}
+          color={color}
+          wheelColor={wheelColor}
+        >
+          <Suspense fallback={<LoadingCarPlaceholder />}>
+            <LoadedCarModel
+              modelPath={modelPath}
+              color={color}
+              wheelColor={wheelColor}
+              hideWheels={!!selectedWheel || !!wheelProductId}
+            />
+          </Suspense>
+        </GLBErrorBoundary>
+      )
+    }
+
+    console.log('⚠️ No model path found - showing procedural model')
+    return <ProceduralCarModel color={color} wheelColor={wheelColor} bodyStyle={vehicle.bodyStyle} />
+  }, [vehicle, modelPath, color, wheelColor, selectedWheel, wheelProductId])
+
+  return (
+    <group>
+      {/* Main car body */}
+      {carBody}
+
+      {/* Wheel Assembly - custom wheels */}
+      {(selectedWheel || wheelProductId) && (
+        <WheelAssembly
+          wheelProductId={wheelProductId}
+          wheelColor={wheelColor}
+          selectedWheel={selectedWheel}
+        />
+      )}
+
+      {/* Bodykit Assembly - bumpers, spoilers, etc */}
+      {bodykitProductId && (
+        <BodykitAssembly bodykitProductId={bodykitProductId} />
+      )}
+
+      {/* Accessories Assembly - exhaust, brakes, lights */}
+      {accessoryProductIds && accessoryProductIds.length > 0 && (
+        <AccessoriesAssembly
+          accessoryProductIds={accessoryProductIds}
+          caliperColor={caliperColor}
+        />
+      )}
+    </group>
+  )
 }
 
 // Dynamic Lighting Component
 function DynamicLighting({ timeOfDay, season }) {
   const lightingPresets = {
     dawn: {
-      ambient: { intensity: 0.3, color: '#8B7BC1' },
-      key: { intensity: 1.2, color: '#FFB347', position: [15, 10, 15] },
+      ambient: { intensity: 0.3, color: '#4d4d6e' },
+      key: { intensity: 1.5, color: '#f7d3a1', position: [15, 10, 15] },
       fill: { intensity: 0.4, color: '#6B8EE3', position: [-10, 5, -10] },
-      rim: { intensity: 1.5, color: '#FF6B9D', position: [-5, 5, 5] }
+      rim: { intensity: 2.0, color: '#ffb3c6', position: [-5, 5, 5] }
     },
     day: {
-      ambient: { intensity: 0.5, color: '#ffffff' },
-      key: { intensity: 2, color: '#FFF8E7', position: [10, 15, 10] },
-      fill: { intensity: 1, color: '#87CEEB', position: [-10, 5, -10] },
-      rim: { intensity: 3, color: '#ffffff', position: [-5, 5, 5] }
+      ambient: { intensity: 0.4, color: '#ffffff' },
+      key: { intensity: 1.8, color: '#fffdf5', position: [10, 15, 10] },
+      fill: { intensity: 0.8, color: '#dbeafe', position: [-10, 5, -10] },
+      rim: { intensity: 2.0, color: '#ffffff', position: [-5, 5, 5] }
     },
     sunset: {
-      ambient: { intensity: 0.4, color: '#FF7F50' },
-      key: { intensity: 1.5, color: '#FF4500', position: [12, 8, 12] },
-      fill: { intensity: 0.6, color: '#FF69B4', position: [-10, 5, -10] },
-      rim: { intensity: 2, color: '#FF8C00', position: [-5, 5, 5] }
+      ambient: { intensity: 0.4, color: '#6e3b3b' },
+      key: { intensity: 1.5, color: '#ff7e47', position: [12, 8, 12] },
+      fill: { intensity: 0.5, color: '#aa4d69', position: [-10, 5, -10] },
+      rim: { intensity: 2.5, color: '#ffa64d', position: [-5, 5, 5] }
     },
     night: {
-      ambient: { intensity: 0.2, color: '#4B0082' },
-      key: { intensity: 0.8, color: '#B0C4DE', position: [5, 20, 5] },
-      fill: { intensity: 0.3, color: '#483D8B', position: [-10, 5, -10] },
-      rim: { intensity: 1, color: '#87CEEB', position: [-5, 5, 5] }
+      ambient: { intensity: 0.1, color: '#1a1a2e' },
+      key: { intensity: 0.0, color: '#000000', position: [0, 0, 0] }, // No direct sun
+      fill: { intensity: 0.3, color: '#2d2d4d', position: [-10, 5, -10] },
+      rim: { intensity: 0.5, color: '#4a5a7a', position: [-5, 5, 5] }
+    },
+    // Adding a specific 'studio' preset which might be mapped from 'day' or 'night' if needed, 
+    // but for now optimizing the existing keys.
+    // Let's make "day" feel more like a controlled studio environment since that's the default.
+    studio: {
+      ambient: { intensity: 0.4, color: '#ffffff' },
+      key: { intensity: 2.5, color: '#ffffff', position: [8, 12, 8] },
+      fill: { intensity: 1.0, color: '#d0d0d0', position: [-8, 6, -8] },
+      rim: { intensity: 3.5, color: '#ffffff', position: [-2, 8, 5] }
     }
   }
 
@@ -274,11 +381,124 @@ function DynamicEnvironment({ location, timeOfDay }) {
   )
 }
 
+// Camera controller component to handle zoom
+function CameraController({ controlsRef, zoomLevel }) {
+  const { camera } = useThree()
+
+  useFrame(() => {
+    if (controlsRef.current && zoomLevel !== null) {
+      // Smooth zoom animation
+      const targetDistance = zoomLevel
+      const currentDistance = camera.position.length()
+      const newDistance = THREE.MathUtils.lerp(currentDistance, targetDistance, 0.1)
+      camera.position.normalize().multiplyScalar(newDistance)
+      controlsRef.current.update()
+    }
+  })
+
+  return null
+}
+
 export default function Car3DViewer() {
-  const { vehicle, color, wheelColor, selectedLocation, selectedSeason, timeOfDay } = useStore()
+  const {
+    vehicle,
+    carColor,
+    wheelColor,
+    selectedLocation,
+    selectedSeason,
+    timeOfDay,
+    previewMode,
+    configuration, // Get full configuration
+    wheelProductId,
+    bodykitProductId,
+    accessoryProductIds,
+    caliperColor
+  } = useStore()
+  const controlsRef = useRef()
+  const [zoomLevel, setZoomLevel] = useState(null)
+
+  // Use preview color if in preview mode, otherwise use selected color
+  const displayColor = useMemo(() => {
+    if (previewMode.active && previewMode.type === 'paint') {
+      return previewMode.value
+    }
+    if (previewMode.active && previewMode.type === 'wrap') {
+      return previewMode.value
+    }
+    return carColor || '#5a0f1d'
+  }, [previewMode, carColor])
+
+  const displayWheelColor = useMemo(() => {
+    if (previewMode.active && previewMode.type === 'wheels') {
+      return previewMode.value
+    }
+    return wheelColor || '#1a1a1a'
+  }, [previewMode, wheelColor])
+
+  // Get selected wheel product (either from config or preview)
+  const selectedWheel = useMemo(() => {
+    if (previewMode.active && previewMode.type === 'wheel_product') {
+      return previewMode.value
+    }
+    return configuration?.wheels
+  }, [previewMode, configuration])
+
+  const handleZoomIn = useCallback(() => {
+    if (controlsRef.current) {
+      const currentDistance = controlsRef.current.object.position.length()
+      const newDistance = Math.max(currentDistance * 0.75, 3) // Min distance 3
+      setZoomLevel(newDistance)
+      setTimeout(() => setZoomLevel(null), 500) // Clear after animation
+    }
+  }, [])
+
+  const handleZoomOut = useCallback(() => {
+    if (controlsRef.current) {
+      const currentDistance = controlsRef.current.object.position.length()
+      const newDistance = Math.min(currentDistance * 1.35, 18) // Max distance 18
+      setZoomLevel(newDistance)
+      setTimeout(() => setZoomLevel(null), 500)
+    }
+  }, [])
+
+  const handleReset = useCallback(() => {
+    if (controlsRef.current) {
+      controlsRef.current.reset()
+    }
+  }, [])
 
   return (
-    <div className="w-full h-full bg-atlas-black">
+    <div className="w-full h-full bg-atlas-black relative">
+      {/* Zoom Controls Overlay */}
+      <div className="absolute bottom-4 left-4 z-10 flex flex-col gap-2">
+        <button
+          onClick={handleZoomIn}
+          className="w-10 h-10 bg-atlas-charcoal/80 hover:bg-atlas-burgundy/80 rounded-lg flex items-center justify-center text-white transition-all duration-200 backdrop-blur-sm border border-white/10 hover:border-atlas-gold/50"
+          title="Zoom In"
+        >
+          <ZoomIn size={20} />
+        </button>
+        <button
+          onClick={handleZoomOut}
+          className="w-10 h-10 bg-atlas-charcoal/80 hover:bg-atlas-burgundy/80 rounded-lg flex items-center justify-center text-white transition-all duration-200 backdrop-blur-sm border border-white/10 hover:border-atlas-gold/50"
+          title="Zoom Out"
+        >
+          <ZoomOut size={20} />
+        </button>
+        <button
+          onClick={handleReset}
+          className="w-10 h-10 bg-atlas-charcoal/80 hover:bg-atlas-burgundy/80 rounded-lg flex items-center justify-center text-white transition-all duration-200 backdrop-blur-sm border border-white/10 hover:border-atlas-gold/50"
+          title="Reset View"
+        >
+          <RotateCcw size={18} />
+        </button>
+      </div>
+
+      {/* Zoom Hint */}
+      <div className="absolute bottom-4 right-4 z-10 text-xs text-white/50 bg-black/30 px-2 py-1 rounded backdrop-blur-sm">
+        Scroll to zoom • Drag to rotate
+      </div>
+
       <Canvas
         shadows
         dpr={[1, 2]} // Quality scaling
@@ -289,6 +509,8 @@ export default function Car3DViewer() {
         }}
       >
         <PerspectiveCamera makeDefault position={[6, 2, 6]} fov={45} />
+
+        <CameraController controlsRef={controlsRef} zoomLevel={zoomLevel} />
 
         {/* Dynamic Lighting based on time of day and season */}
         <DynamicLighting timeOfDay={timeOfDay} season={selectedSeason} />
@@ -302,8 +524,13 @@ export default function Car3DViewer() {
           >
             <Car
               vehicle={vehicle}
-              color={color || '#5a0f1d'} // Default burgundy
-              wheelColor={wheelColor || '#1a1a1a'}
+              color={displayColor}
+              wheelColor={displayWheelColor}
+              wheelProductId={wheelProductId}
+              selectedWheel={selectedWheel}
+              bodykitProductId={bodykitProductId}
+              accessoryProductIds={accessoryProductIds}
+              caliperColor={caliperColor}
             />
           </Float>
 
@@ -326,6 +553,7 @@ export default function Car3DViewer() {
         </Suspense>
 
         <OrbitControls
+          ref={controlsRef}
           enablePan={true}
           panSpeed={0.8}
           enableZoom={true}

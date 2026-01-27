@@ -1,4 +1,3 @@
-
 import React from 'react'
 import { Check, Info } from 'lucide-react'
 import useStore from '../store/useStore'
@@ -23,91 +22,76 @@ function adjustBrightness(hexColor, percent) {
   return `#${newR}${newG}${newB}`
 }
 
-function ProductCard({ product, isSelected, onSelect, type }) {
+function ProductCard({ product, isSelected, onSelect, type, onHover, onLeave }) {
   const { t, formatCurrency } = useTranslation()
 
   return (
     <div
       onClick={() => onSelect(product)}
+      onMouseEnter={() => onHover && onHover(product)}
+      onMouseLeave={() => onLeave && onLeave()}
       className={`
-        relative overflow-hidden rounded-xl border-2 transition-all duration-300 cursor-pointer group
+        relative overflow-hidden rounded-xl border transition-all duration-300 cursor-pointer group
         ${isSelected
-          ? 'border-atlas-gold bg-atlas-gold/10'
-          : 'border-white/5 bg-black/20 hover:border-white/20 hover:bg-black/40'}
+          ? 'border-atlas-gold bg-atlas-gold/10 scale-[1.02] shadow-[0_0_20px_rgba(196,166,97,0.2)]'
+          : 'border-white/5 bg-white/5 hover:bg-white/10 hover:border-white/20 hover:scale-[1.01]'}
       `}
     >
-      {/* Selected indicator */}
-      {isSelected && (
-        <div className="absolute top-0 right-0 p-1 bg-atlas-gold rounded-bl-xl shadow-lg z-10">
-          <Check className="w-4 h-4 text-black" />
-        </div>
-      )}
-
       <div className="p-4">
         {/* Product Image or Color Swatch */}
         {product.image ? (
-          <div className="relative w-full h-32 rounded-lg mb-4 overflow-hidden bg-atlas-surface">
+          <div className="relative w-full h-32 rounded-lg mb-4 overflow-hidden bg-black/50">
             <img
               src={`/products/${type}/${product.image}`}
               alt={product.name}
-              className="w-full h-full object-cover transition-transform group-hover:scale-110"
+              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
               loading="lazy"
               onError={(e) => {
-                // Fallback to gradient if image fails
                 e.target.style.display = 'none'
-                e.target.parentElement.style.background = product.color
-                  ? `linear-gradient(135deg, ${product.color} 0%, ${adjustBrightness(product.color, -20)} 100%)`
-                  : 'linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 100%)'
+                // If image fails and has color, show color
+                if (product.color) {
+                  e.target.parentElement.style.backgroundColor = product.color
+                }
               }}
             />
-            {/* Overlay gradient for better text visibility */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent opacity-60" />
           </div>
         ) : (type === 'paints' || type === 'wraps') && product.color ? (
           <div
-            className="w-full h-32 rounded-lg mb-4 shadow-inner flex-shrink-0 border border-white/10"
+            className="w-full h-32 rounded-lg mb-4 shadow-inner flex-shrink-0 border border-white/5"
             style={{ backgroundColor: product.color }}
           />
         ) : (
-          <div className="w-full h-32 rounded-lg mb-4 bg-gradient-to-br from-atlas-surface to-atlas-charcoal border border-white/10 flex items-center justify-center">
-            <span className="text-white/30 text-sm">{product.type || 'Product'}</span>
+          <div className="w-full h-32 rounded-lg mb-4 bg-gradient-to-br from-white/5 to-white/0 border border-white/5 flex items-center justify-center">
+            <span className="text-white/20 text-xs tracking-widest uppercase">{product.type || 'Standard'}</span>
           </div>
         )}
 
         {/* Product info */}
-        <h4 className="font-display font-semibold text-white mb-2 text-lg leading-tight">
-          {product.name}
-        </h4>
+        <div className="flex justify-between items-start gap-2 mb-2">
+          <h4 className="font-bold text-white leading-tight">
+            {product.name}
+          </h4>
+          {isSelected && <div className="text-atlas-gold bg-atlas-gold/20 p-1 rounded-full"><Check className="w-3 h-3" /></div>}
+        </div>
 
-        <div className="space-y-2 mb-4">
+        <div className="space-y-1 mb-4">
           {product.finish && (
-            <p className="text-xs text-gray-400 capitalize">{product.finish}</p>
-          )}
-          {product.size && (
-            <p className="text-xs text-gray-400">{product.size}</p>
-          )}
-          {product.type && (
-            <p className="text-xs text-gray-400">{product.type}</p>
-          )}
-          {product.stars && (
-            <p className="text-xs text-gray-400">{product.stars} stars</p>
+            <p className="text-xs text-gray-500 capitalize">{product.finish}</p>
           )}
           {product.warranty && (
-            <span className="inline-block px-2 py-1 bg-atlas-gold/20 text-atlas-gold text-xs font-medium rounded">
-              {product.warranty} Warranty
+            <span className="inline-block px-1.5 py-0.5 bg-atlas-gold/10 text-atlas-gold text-[10px] font-bold tracking-wide rounded uppercase">
+              {product.warranty}
             </span>
-          )}
-          {product.materials && (
-            <p className="text-xs text-gray-500">Materials: {product.materials.join(', ')}</p>
           )}
         </div>
 
-        <div className="flex items-end justify-between mt-auto">
-          <span className="text-atlas-gold font-bold text-lg">
+        <div className="flex items-end justify-between mt-auto border-t border-white/5 pt-3">
+          <span className="text-atlas-gold font-bold text-lg font-display">
             {formatCurrency(product.price)}
           </span>
           <div className="text-right">
-            <span className="text-xs text-gray-500 block">{product.laborHours}h {t('products.specifications.labor')}</span>
+            <span className="text-[10px] text-gray-500 block uppercase tracking-wider">{product.laborHours}h {t('products.specifications.labor')}</span>
           </div>
         </div>
       </div>
@@ -115,35 +99,80 @@ function ProductCard({ product, isSelected, onSelect, type }) {
   )
 }
 
-function ColorSwatches({ products, selectedId, onSelect }) {
+function ColorSwatches({ products, selectedId, onSelect, onHover, onLeave }) {
   return (
-    <div className="flex flex-wrap gap-3 mb-8">
+    <div className="flex flex-wrap gap-3 mb-8 bg-black/20 p-4 rounded-2xl border border-white/5">
       {products.map((product) => (
         <button
           key={product.id}
           onClick={() => onSelect(product)}
+          onMouseEnter={() => onHover && onHover(product)}
+          onMouseLeave={() => onLeave && onLeave()}
           className={`
-            w-10 h-10 rounded-full cursor-pointer transition-all duration-300 border-2
+            w-12 h-12 rounded-full cursor-pointer transition-all duration-300 border-2 relative
             ${selectedId === product.id
-              ? 'border-atlas-gold scale-110 shadow-[0_0_15px_rgba(196,166,97,0.5)]'
-              : 'border-transparent hover:scale-110 hover:border-white/30'}
+              ? 'border-atlas-gold scale-110 shadow-[0_0_15px_rgba(196,166,97,0.5)] z-10'
+              : 'border-transparent hover:scale-110 hover:border-white/30 hover:z-10'}
           `}
           style={{ backgroundColor: product.color }}
           title={product.name}
-        />
+        >
+          {selectedId === product.id && (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <Check className="w-6 h-6 text-white drop-shadow-md" />
+            </div>
+          )}
+        </button>
       ))}
     </div>
   )
 }
 
 function ProductSelector({ category, products, title, description, showSwatches = false }) {
-  const { configuration, setConfiguration, setCarColor, setWheelColor } = useStore()
+  const {
+    configuration,
+    setConfiguration,
+    setCarColor,
+    setWheelColor,
+    setWheelProductId,
+    setBodykitProductId,
+    setInteriorProductId,
+    setStarlightProductId,
+    addAccessoryProductId,
+    removeAccessoryProductId,
+    setPreview,
+    clearPreview
+  } = useStore()
   const { t, formatCurrency } = useTranslation()
+
+  // Handle hover preview
+  const handleMouseEnter = (product) => {
+    if (category === 'paints' || category === 'wraps') {
+      if (product.color) {
+        setPreview('paint', product.color)
+      }
+    }
+    if (category === 'wheels') {
+      const finishMap = {
+        'Gloss Black': '#1a1a1a',
+        'Satin Black': '#1a1a1a',
+        'Brushed Bronze': '#8B7355',
+        'Machined Silver': '#C0C0C0',
+        'Polished Chrome': '#E8E8E8',
+        'Carbon Weave': '#2a2a2a'
+      }
+      const color = finishMap[product.finish] || '#4a4a4a'
+      setPreview('wheels', color)
+    }
+  }
+
+  const handleMouseLeave = () => {
+    clearPreview()
+  }
 
   const selectedProduct = configuration[category]
 
   const handleSelect = (product) => {
-    // If same product is clicked, deselect it
     if (selectedProduct?.id === product.id) {
       setConfiguration(category, null)
       return
@@ -151,7 +180,6 @@ function ProductSelector({ category, products, title, description, showSwatches 
 
     setConfiguration(category, product)
 
-    // Update car color for visual preview
     if (category === 'paints' || category === 'wraps') {
       if (product.color) {
         setCarColor(product.color)
@@ -159,8 +187,6 @@ function ProductSelector({ category, products, title, description, showSwatches 
     }
 
     if (category === 'wheels') {
-      // Mapping finish to hex colors for 3D viewer
-      // Enhance this logic for better matching or move to utility
       const finishMap = {
         'Gloss Black': '#1a1a1a',
         'Satin Black': '#1a1a1a',
@@ -171,7 +197,21 @@ function ProductSelector({ category, products, title, description, showSwatches 
       }
       const color = finishMap[product.finish] || '#4a4a4a'
       setWheelColor(color)
+      setWheelProductId(product.id)
     }
+
+    if (category === 'bodykits') setBodykitProductId(product.id)
+    if (category === 'interior') setInteriorProductId(product.id)
+    if (category === 'starlight') setStarlightProductId(product.id)
+    if (category === 'accessories') addAccessoryProductId(product.id)
+  }
+
+  const handleDeselect = () => {
+    setConfiguration(category, null)
+    if (category === 'wheels') setWheelProductId(null)
+    if (category === 'bodykits') setBodykitProductId(null)
+    if (category === 'interior') setInteriorProductId(null)
+    if (category === 'starlight') setStarlightProductId(null)
   }
 
   if (!products || products.length === 0) {
@@ -185,70 +225,43 @@ function ProductSelector({ category, products, title, description, showSwatches 
   return (
     <div className="animate-fade-in">
       <div className="mb-8">
-        <h3 className="font-display text-2xl font-bold text-white mb-2">
+        <h3 className="font-display text-3xl font-bold text-white mb-2">
           {title}
         </h3>
         {description && (
-          <p className="text-gray-400 leading-relaxed">{description}</p>
+          <p className="text-gray-400 leading-relaxed text-sm">{description}</p>
         )}
       </div>
 
-      {/* Show color swatches for quick selection */}
       {showSwatches && (
         <ColorSwatches
           products={products}
           selectedId={selectedProduct?.id}
           onSelect={handleSelect}
+          onHover={handleMouseEnter}
+          onLeave={handleMouseLeave}
         />
       )}
 
-      {/* Selected product detail */}
-      {selectedProduct && (
-        <div className="mb-8 p-5 bg-gradient-to-br from-atlas-gold/20 to-transparent rounded-xl border border-atlas-gold/20 relative overflow-hidden">
+      {selectedProduct && selectedProduct.category !== 'paints' && (
+        <div className="mb-8 p-6 bg-gradient-to-br from-atlas-gold/20 to-transparent rounded-2xl border border-atlas-gold/20 relative overflow-hidden backdrop-blur-sm">
           <div className="flex items-start gap-4 relative z-10">
-            {selectedProduct.color && (
-              <div
-                className="w-16 h-16 rounded-lg shadow-inner flex-shrink-0 border border-white/10"
-                style={{ backgroundColor: selectedProduct.color }}
-              />
-            )}
             <div className="flex-1">
-              <h4 className="font-semibold text-white text-lg">
+              <div className="text-atlas-gold text-xs font-bold tracking-widest uppercase mb-1">{t('nav.currentBuild')}</div>
+              <h4 className="font-bold text-white text-xl">
                 {selectedProduct.name}
               </h4>
-              <p className="text-sm text-gray-300 mt-1">
-                {selectedProduct.finish && `${selectedProduct.finish} • `}
-                {selectedProduct.laborHours}h {t('products.specifications.labor')}
-                {selectedProduct.warranty && ` • ${selectedProduct.warranty} ${t('products.specifications.warranty')}`}
-              </p>
-              <p className="text-xl font-bold text-atlas-gold mt-2">
+              <p className="text-3xl font-display font-bold text-atlas-gold mt-2">
                 {formatCurrency(selectedProduct.price)}
               </p>
             </div>
             <button
-              onClick={() => setConfiguration(category, null)}
-              className="text-sm text-gray-400 hover:text-white transition-colors"
+              onClick={handleDeselect}
+              className="text-xs font-bold text-white/50 hover:text-white bg-white/5 hover:bg-white/10 px-3 py-2 rounded-lg transition-colors border border-white/5"
             >
               {t('products.remove')}
             </button>
           </div>
-
-          {/* Included items */}
-          {selectedProduct.includes && (
-            <div className="mt-4 pt-4 border-t border-white/10">
-              <p className="text-xs text-gray-400 mb-2">{t('products.specifications.included')}:</p>
-              <div className="flex flex-wrap gap-2">
-                {selectedProduct.includes.map((item, i) => (
-                  <span
-                    key={i}
-                    className="px-2 py-1 bg-white/10 rounded text-xs text-gray-300"
-                  >
-                    {item}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
       )}
 
@@ -261,16 +274,10 @@ function ProductSelector({ category, products, title, description, showSwatches 
             isSelected={selectedProduct?.id === product.id}
             onSelect={handleSelect}
             type={category}
+            onHover={handleMouseEnter}
+            onLeave={handleMouseLeave}
           />
         ))}
-      </div>
-
-      {/* Info note */}
-      <div className="mt-8 flex items-start gap-3 text-sm text-gray-500 bg-black/20 p-4 rounded-lg">
-        <Info className="w-5 h-5 mt-0.5 flex-shrink-0 text-atlas-gold" />
-        <p>
-          {t('products.details')}
-        </p>
       </div>
     </div>
   )

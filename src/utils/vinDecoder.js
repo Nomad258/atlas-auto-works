@@ -69,7 +69,7 @@ export function decodeVIN(vin) {
     // Normalize VIN
     const cleanVIN = vin.toUpperCase().replace(/[^A-Z0-9]/g, '')
 
-    if (cleanVIN.length < 8) throw new Error('VIN must be at least 8 characters')
+    if (cleanVIN.length < 8) throw new Error('Le VIN doit comporter au moins 8 caractères')
 
     // Look up
     const prefix = cleanVIN.substring(0, 8)

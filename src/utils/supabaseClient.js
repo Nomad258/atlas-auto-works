@@ -2,7 +2,10 @@
 
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+// Hardcoded Supabase URL as fallback - this is a public bucket, no security risk
+const SUPABASE_URL_FALLBACK = 'https://xoyyudojecpytvyisjqv.supabase.co'
+
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || SUPABASE_URL_FALLBACK
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
 // Create Supabase client (only if credentials are available)
@@ -13,17 +16,15 @@ export const supabase = supabaseUrl && supabaseAnonKey
 /**
  * Get public URL for a car model from Supabase Storage
  * @param {string} fileName - The model file name (e.g., 'bmw_m3.glb')
- * @returns {string|null} Public URL or null if Supabase not configured
+ * @returns {string} Public URL for the model
  */
 export function getSupabaseModelUrl(fileName) {
-  if (!supabaseUrl) {
-    console.warn('Supabase not configured, models will be loaded from local storage')
-    return null
-  }
+  // Always use the URL - even if env var is not set, use the fallback
+  const baseUrl = supabaseUrl || SUPABASE_URL_FALLBACK
 
   // Construct the public URL directly
-  const publicUrl = `${supabaseUrl}/storage/v1/object/public/cars/${fileName}`
-  console.log('🔗 Supabase model URL:', publicUrl)
+  const publicUrl = `${baseUrl}/storage/v1/object/public/cars/${fileName}`
+  console.log('📦 Loading car model from Supabase:', publicUrl)
   return publicUrl
 }
 

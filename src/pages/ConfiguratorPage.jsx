@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import {
   Palette, Layers, Car as CarIcon, CircleDot, Sofa, Sparkles,
   Package, Eye, Calculator, CalendarCheck, ChevronLeft, ChevronRight,
-  Check, Search, ArrowRight, Info, RotateCcw, ZoomIn
+  Check, Search, ArrowRight, Info, RotateCcw, ZoomIn, ChevronDown, User
 } from 'lucide-react'
 import useStore from '../store/useStore'
 import { getProducts, decodeVIN } from '../utils/api'
@@ -13,8 +13,9 @@ import ProductSelector from '../components/ProductSelector'
 import LocationVisualizer from '../components/LocationVisualizer'
 import QuoteBuilder from '../components/QuoteBuilder'
 import BookingForm from '../components/BookingForm'
+import { getAvailableModels } from '../utils/carModelMapping'
 
-// Step definitions with translation keys
+// Step definitions
 const STEP_IDS = {
   VEHICLE: 0,
   EXTERIOR: 1,
@@ -28,134 +29,14 @@ const STEP_IDS = {
   BOOK: 9
 }
 
-function VehicleEntry({ onVehicleLoaded }) {
-  const [vin, setVin] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
-  const { setVehicle, setCarColor } = useStore()
-  const { t } = useTranslation()
-
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-    setError('')
-
-    if (vin.length < 8) {
-      setError(t('errors.validation'))
-      return
-    }
-
-    setLoading(true)
-    try {
-      const vehicle = await decodeVIN(vin)
-      setVehicle(vehicle)
-      if (vehicle.baseColor) {
-        setCarColor(vehicle.baseColor)
-      }
-      onVehicleLoaded()
-    } catch (err) {
-      setError(t('vin.error'))
-      console.error(err)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  return (
-    <div className="flex flex-col items-center justify-center h-full p-6 text-center">
-      <div className="max-w-md w-full bg-atlas-surface/50 backdrop-blur-xl border border-white/10 p-8 rounded-2xl shadow-2xl">
-        <div className="w-16 h-16 bg-gradient-to-br from-atlas-burgundy to-black rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg shadow-atlas-burgundy/20">
-          <CarIcon className="w-8 h-8 text-white" />
-        </div>
-
-        <h2 className="font-display text-3xl font-bold text-white mb-3">
-          {t('vin.title')}
-        </h2>
-        <p className="text-atlas-silver mb-8">
-          {t('vin.subtitle')}
-        </p>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-            <input
-              type="text"
-              value={vin}
-              onChange={(e) => setVin(e.target.value.toUpperCase())}
-              placeholder={t('vin.placeholder')}
-              maxLength={17}
-              className="w-full pl-12 pr-4 py-4 rounded-xl bg-black/40 border border-white/10 focus:border-atlas-gold focus:ring-1 focus:ring-atlas-gold outline-none font-mono text-lg text-white placeholder-gray-500 transition-all"
-            />
-          </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full btn-gold py-4 rounded-xl font-bold text-lg flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {loading ? (
-              <div className="w-5 h-5 border-2 border-atlas-charcoal/30 border-t-atlas-charcoal rounded-full animate-spin" />
-            ) : (
-              <>
-                {t('vin.decode')}
-                <ArrowRight className="w-5 h-5" />
-              </>
-            )}
-          </button>
-        </form>
-
-        {error && (
-          <div className="mt-4 p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm">
-            {error}
-          </div>
-        )}
-
-        <div className="mt-6 flex items-start gap-2 text-xs text-gray-500 text-left">
-          <Info className="w-4 h-4 mt-0.5 flex-shrink-0" />
-          <p>
-            {t('vin.help')}
-            <br />
-            <span className="opacity-50">Ex: WBSWD9350PS (BMW), ZFF76ZFA (Ferrari)</span>
-          </p>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function QuoteSummaryWidget({ onViewQuote }) {
-  const { getSelectedItems, getTotal } = useStore()
-  const { t, formatCurrency } = useTranslation()
-  const items = getSelectedItems()
-  const total = getTotal()
-
-  if (items.length === 0) return null
-
-  return (
-    <div className="absolute bottom-8 left-8 right-8 md:width-auto md:right-auto bg-black/60 backdrop-blur-md border border-white/10 p-4 rounded-xl flex items-center gap-6 animate-fade-in">
-      <div>
-        <div className="text-xs text-gray-400 mb-1">{t('quote.itemsSelected')} ({items.length})</div>
-        <div className="text-xl font-display font-bold text-atlas-gold">
-          {formatCurrency(total)}
-        </div>
-      </div>
-      <button
-        onClick={onViewQuote}
-        className="btn-gold px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 ml-auto"
-      >
-        <Calculator className="w-4 h-4" />
-        {t('products.details')}
-      </button>
-    </div>
-  )
-}
-
-export default function ConfiguratorPage() {
+function ConfiguratorPage() {
   const navigate = useNavigate()
   const { t } = useTranslation()
-  const { currentStep, setCurrentStep, vehicle, products, setProducts } = useStore()
+  const { currentStep, setCurrentStep, vehicle, setVehicle, products, setProducts, setCarColor } = useStore()
   const [isPanelOpen, setIsPanelOpen] = useState(true)
+  const [loading, setLoading] = useState(false)
 
-  // define steps with translation
+  // define steps with icons
   const steps = [
     { id: STEP_IDS.VEHICLE, name: t('configurator.steps.vehicle'), icon: CarIcon },
     { id: STEP_IDS.EXTERIOR, name: t('features.paint.title'), icon: Palette },
@@ -181,188 +62,167 @@ export default function ConfiguratorPage() {
     fetchProducts()
   }, [])
 
-  const handleStepClick = (stepId) => {
-    if (stepId === 0 || vehicle) {
-      setCurrentStep(stepId)
-    }
+  // Vehicle Selection Component (Embedded)
+  const VehicleSelection = () => {
+    return (
+      <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/60 backdrop-blur-xl animate-fade-in">
+        <div className="bg-atlas-surface border border-white/10 p-8 rounded-3xl max-w-4xl w-full shadow-2xl">
+          <h2 className="font-display text-4xl font-bold mb-6 text-center">{t('configurator.selection.title')}</h2>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-[60vh] overflow-y-auto px-2 custom-scrollbar">
+            {getAvailableModels().map((key) => {
+              const parts = key.split('-')
+              const display = parts.map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(' ')
+              return (
+                <button
+                  key={key}
+                  onClick={() => {
+                    setVehicle({ make: parts[0], model: parts.slice(1).join(' '), year: 2024, vin: 'SELECT-' + key, baseColor: '#000' })
+                    setCarColor('#000') // Default
+                    setCurrentStep(1)
+                  }}
+                  className="group relative h-32 rounded-xl overflow-hidden border border-white/5 hover:border-atlas-gold transition-all"
+                >
+                  <div className="absolute inset-0 bg-gradient-to-br from-atlas-surface to-black group-hover:from-atlas-gold/20 group-hover:to-black transition-all" />
+                  <div className="absolute bottom-4 left-4 font-bold text-lg group-hover:text-atlas-gold transition-colors">
+                    {display}
+                  </div>
+                  <CarIcon className="absolute top-4 right-4 text-white/10 w-12 h-12 group-hover:text-atlas-gold/20 transition-all" />
+                </button>
+              )
+            })}
+          </div>
+
+          <div className="mt-8 text-center border-t border-white/10 pt-6">
+            <p className="text-gray-400 text-sm mb-4">{t('configurator.selection.or')}</p>
+            <div className="flex gap-2 max-w-md mx-auto">
+              <input className="flex-1 bg-black/50 border border-white/10 rounded-lg px-4 py-2 outline-none focus:border-atlas-gold" placeholder={t('configurator.selection.vinPlaceholder')} />
+              <button className="btn-gold px-6 py-2 rounded-lg text-sm font-bold">{t('configurator.selection.decode')}</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   const renderStepContent = () => {
-    if (currentStep === 0) {
-      return <VehicleEntry onVehicleLoaded={() => setCurrentStep(1)} />
+    switch (currentStep) {
+      case 1:
+        return (
+          <div className="space-y-8 pb-32 animate-fade-in">
+            <ProductSelector category="paints" products={products?.paints || []} title={t('features.paint.title')} description={t('features.paint.description')} showSwatches />
+            <div className="border-t border-white/10 pt-8">
+              <ProductSelector category="wraps" products={products?.wraps || []} title={t('products.filters.wrap')} description={t('features.paint.description')} showSwatches />
+            </div>
+          </div>
+        )
+      case 2: return <ProductSelector category="bodykits" products={products?.bodykits || []} title={t('features.bodykit.title')} description={t('features.bodykit.description')} />
+      case 3: return <ProductSelector category="wheels" products={products?.wheels || []} title={t('features.wheels.title')} description={t('features.wheels.description')} />
+      case 4: return <ProductSelector category="interior" products={products?.interior || []} title={t('features.interior.title')} description={t('features.interior.description')} />
+      case 5: return <ProductSelector category="starlight" products={products?.starlight || []} title={t('features.starlight.title')} description={t('features.starlight.description')} />
+      case 6: return <ProductSelector category="accessories" products={products?.accessories || []} title={t('features.accessories.title')} description={t('features.accessories.description')} />
+      case 7: return <LocationVisualizer />
+      case 8: return <QuoteBuilder onProceedToBooking={() => setCurrentStep(9)} />
+      case 9: return <BookingForm />
+      default: return null
     }
-
-    // Scrollable container for panel content
-    const content = (
-      <div className="h-full overflow-y-auto pr-2 custom-scrollbar">
-        {(() => {
-          switch (currentStep) {
-            case 1:
-              return (
-                <div className="space-y-8 pb-20">
-                  <ProductSelector
-                    category="paints"
-                    products={products?.paints || []}
-                    title={t('features.paint.title')}
-                    description={t('features.paint.description')}
-                    showSwatches
-                  />
-                  <div className="border-t border-white/10 pt-8">
-                    <ProductSelector
-                      category="wraps"
-                      products={products?.wraps || []}
-                      title={t('products.filters.wrap')}
-                      description={t('features.paint.description')}
-                      showSwatches
-                    />
-                  </div>
-                </div>
-              )
-            case 2:
-              return <ProductSelector category="bodykits" products={products?.bodykits || []} title={t('features.bodykit.title')} description={t('features.bodykit.description')} />
-            case 3:
-              return <ProductSelector category="wheels" products={products?.wheels || []} title={t('features.wheels.title')} description={t('features.wheels.description')} />
-            case 4:
-              return <ProductSelector category="interior" products={products?.interior || []} title={t('features.interior.title')} description={t('features.interior.description')} />
-            case 5:
-              return <ProductSelector category="starlight" products={products?.starlight || []} title={t('features.starlight.title')} description={t('features.starlight.description')} />
-            case 6:
-              return <ProductSelector category="accessories" products={products?.accessories || []} title={t('features.accessories.title')} description={t('features.accessories.description')} />
-            case 7:
-              return <LocationVisualizer />
-            case 8:
-              return <QuoteBuilder onProceedToBooking={() => setCurrentStep(9)} />
-            case 9:
-              return <BookingForm />
-            default:
-              return null
-          }
-        })()}
-      </div>
-    )
-
-    return content
   }
 
   return (
-    <div className="fixed inset-0 w-full h-full bg-atlas-black overflow-hidden flex flex-col md:flex-row">
-      {/* 3D Background - Always visible but z-index varies */}
-      <div className={`absolute inset-0 transition-all duration-700 ease-in-out ${currentStep === 0 ? 'opacity-30 blur-sm' : 'opacity-100'}`}>
+    <div className="fixed inset-0 w-full h-full bg-atlas-black overflow-hidden flex flex-col md:flex-row font-body text-white">
+
+      {/* 3D Background */}
+      <div className={`absolute inset-0 transition-all duration-1000 ease-in-out ${currentStep === 0 ? 'scale-110 blur-xl opacity-40' : 'scale-100 opacity-100'}`}>
         <Car3DViewer />
       </div>
 
-      {/* Top Bar */}
+      {/* Top Bar (Floating) */}
       <div className="absolute top-0 left-0 w-full z-20 p-6 flex justify-between items-start pointer-events-none">
-        <button
-          onClick={() => navigate('/')}
-          className="pointer-events-auto flex items-center gap-2 text-white/70 hover:text-white transition-colors bg-black/20 backdrop-blur-md px-4 py-2 rounded-full border border-white/5"
-        >
-          <ChevronLeft className="w-4 h-4" />
-          <span className="font-medium text-sm">{t('nav.home')}</span>
+        <button onClick={() => navigate('/')} className="pointer-events-auto group flex items-center gap-3 bg-black/40 backdrop-blur-md px-6 py-3 rounded-full border border-white/5 hover:bg-black/60 transition-all hover:border-atlas-gold/50">
+          <ChevronLeft className="w-4 h-4 text-white group-hover:text-atlas-gold transition-colors" />
+          <span className="font-bold tracking-wide text-sm">{t('nav.exit')}</span>
         </button>
 
         {vehicle && (
-          <div className="pointer-events-auto bg-black/40 backdrop-blur-md px-6 py-2 rounded-full border border-white/10 text-white">
-            <span className="opacity-50 text-xs uppercase tracking-wider mr-2">{vehicle.year}</span>
-            <span className="font-display font-bold">{vehicle.make} {vehicle.model}</span>
+          <div className="hidden md:flex flex-col items-end pointer-events-auto">
+            <div className="bg-black/40 backdrop-blur-md px-8 py-3 rounded-full border border-white/5 flex items-center gap-4">
+              <div className="text-right">
+                <div className="text-[10px] text-atlas-gold uppercase tracking-widest font-bold">{t('nav.currentBuild')}</div>
+                <div className="font-display font-bold text-lg">{vehicle.make} {vehicle.model}</div>
+              </div>
+              <div className="h-8 w-[1px] bg-white/10" />
+              <div className="text-right">
+                <div className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">{t('nav.year')}</div>
+                <div className="font-mono text-sm">{vehicle.year}</div>
+              </div>
+            </div>
           </div>
         )}
       </div>
 
-      {/* Main Content Area (Overlay) */}
-      <div className="relative z-10 w-full h-full pointer-events-none">
-        {/* Step 0: Center Modal style */}
-        {currentStep === 0 && (
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-auto z-30">
+      {/* Vehicle Selection Modal */}
+      {currentStep === 0 && <VehicleSelection />}
+
+      {/* Right Configuration Panel */}
+      {vehicle && currentStep > 0 && (
+        <div className={`
+              absolute top-0 right-0 h-full w-full md:w-[500px] z-20
+              bg-black/80 backdrop-blur-2xl border-l border-white/10 shadow-2xl
+              transform transition-transform duration-500 ease-out flex flex-col
+              ${isPanelOpen ? 'translate-x-0' : 'translate-x-full'}
+          `}>
+
+          {/* Steps Progress Bar (Top of panel) */}
+          <div className="h-1 w-full bg-white/5 flex">
+            {steps.slice(1).map((s, i) => (
+              <div key={s.id} className={`h-full transition-all duration-500 ${s.id <= currentStep ? 'bg-atlas-gold flex-1' : 'bg-transparent flex-1'}`} />
+            ))}
+          </div>
+
+          {/* Panel Header */}
+          <div className="p-8 border-b border-white/5">
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-atlas-gold text-xs font-bold tracking-widest uppercase mb-1">{t('configurator.panel.step')} 0{currentStep} / 09</span>
+              <button onClick={() => setIsPanelOpen(false)} className="md:hidden p-2 text-white/50"><ChevronRight /></button>
+            </div>
+            <h2 className="font-display text-4xl font-bold">{steps.find(s => s.id === currentStep)?.name}</h2>
+          </div>
+
+          {/* Scrollable Content */}
+          <div className="flex-1 overflow-y-auto custom-scrollbar p-6 relative">
             {renderStepContent()}
           </div>
-        )}
 
-        {/* Right Side Panel - Config options */}
-        {vehicle && currentStep > 0 && (
-          <div
-            className={`
-              absolute top-0 right-0 h-full w-full md:w-[480px] 
-              bg-atlas-surface/90 backdrop-blur-xl border-l border-white/10 
-              shadow-2xl transition-transform duration-500 ease-out pointer-events-auto
-              flex flex-col
-              ${isPanelOpen ? 'translate-x-0' : 'translate-x-full'}
-            `}
-          >
-            {/* Panel Header */}
-            <div className="p-6 border-b border-white/10 flex justify-between items-center">
-              <div>
-                <h2 className="text-xl font-display font-bold text-white">
-                  {steps.find(s => s.id === currentStep)?.name}
-                </h2>
-                <div className="flex gap-1 mt-1">
-                  {/* Progress dots */}
-                  {steps.slice(1).map(s => (
-                    <div
-                      key={s.id}
-                      className={`h-1 rounded-full transition-all ${s.id === currentStep ? 'w-8 bg-atlas-gold' :
-                          s.id < currentStep ? 'w-2 bg-atlas-burgundy' : 'w-2 bg-white/10'
-                        }`}
-                    />
-                  ))}
-                </div>
-              </div>
+          {/* Footer Actions */}
+          <div className="p-6 bg-black/50 border-t border-white/10 flex justify-between items-center backdrop-blur-md">
+            <button
+              onClick={() => setCurrentStep(Math.max(1, currentStep - 1))}
+              className={`flex items-center gap-2 text-sm font-semibold text-gray-400 hover:text-white transition-colors ${currentStep === 1 ? 'opacity-0 pointer-events-none' : ''}`}
+            >
+              <ChevronLeft className="w-4 h-4" /> {t('configurator.panel.prev')}
+            </button>
 
+            {currentStep < 9 && (
               <button
-                onClick={() => setIsPanelOpen(false)}
-                className="md:hidden p-2 text-white/50 hover:text-white"
+                onClick={() => setCurrentStep(currentStep + 1)}
+                className="bg-atlas-gold hover:bg-atlas-gold-light text-black px-8 py-3 rounded-xl font-bold text-sm tracking-wide flex items-center gap-2 transition-all hover:scale-105 shadow-lg shadow-atlas-gold/20"
               >
-                <ChevronRight />
+                {t('configurator.panel.next')} <ChevronRight className="w-4 h-4" />
               </button>
-            </div>
-
-            {/* Panel Body */}
-            <div className="flex-1 relative p-6">
-              {renderStepContent()}
-            </div>
-
-            {/* Panel Footer Navigation */}
-            <div className="p-6 border-t border-white/10 bg-black/20 flex justify-between items-center">
-              <button
-                onClick={() => setCurrentStep(Math.max(1, currentStep - 1))}
-                disabled={currentStep === 1}
-                className="text-sm font-medium text-white/50 hover:text-white disabled:opacity-20 transition-colors"
-              >
-                {t('common.previous')}
-              </button>
-
-              {currentStep < 9 && (
-                <button
-                  onClick={() => setCurrentStep(currentStep + 1)}
-                  className="btn-gold px-6 py-2 rounded-lg font-bold text-sm flex items-center gap-2"
-                >
-                  {t('common.next')}
-                  <ChevronRight className="w-4 h-4" />
-                </button>
-              )}
-            </div>
+            )}
           </div>
-        )}
-
-        {/* Toggle Button for Mobile/Closed Panel */}
-        {!isPanelOpen && vehicle && (
-          <button
-            onClick={() => setIsPanelOpen(true)}
-            className="absolute right-0 top-1/2 -translate-y-1/2 pointer-events-auto bg-atlas-gold p-4 rounded-l-xl shadow-lg"
-          >
-            <ChevronLeft className="text-atlas-charcoal" />
-          </button>
-        )}
-
-      </div>
-
-      {/* Quote Widget */}
-      {vehicle && currentStep > 0 && currentStep < 8 && (
-        <div className="pointer-events-auto z-20">
-          <QuoteSummaryWidget onViewQuote={() => setCurrentStep(8)} />
         </div>
+      )}
+
+      {/* Toggle Button (When panel closed) */}
+      {!isPanelOpen && vehicle && (
+        <button onClick={() => setIsPanelOpen(true)} className="absolute right-0 top-1/2 -translate-y-1/2 bg-atlas-gold p-4 rounded-l-2xl shadow-xl z-20 hover:pl-6 transition-all">
+          <ChevronLeft className="text-black w-6 h-6" />
+        </button>
       )}
 
     </div>
   )
 }
+
+export default ConfiguratorPage

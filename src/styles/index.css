@@ -4,9 +4,10 @@
 
 :root {
   --atlas-black: #0a0a0a;
-  --atlas-charcoal: #1a1a1a;
-  --atlas-surface: #242424;
+  --atlas-charcoal: #121212;
+  --atlas-surface: #1E1E1E;
   --atlas-burgundy: #5a0f1d;
+  --atlas-burgundy-light: #7d1529;
   --atlas-gold: #c4a661;
   --atlas-gold-light: #e6c885;
   --atlas-silver: #e0e0e0;

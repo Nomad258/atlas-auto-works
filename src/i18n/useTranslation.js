@@ -19,7 +19,7 @@ export const useTranslation = () => {
    */
   const t = (key, params = {}) => {
     const keys = key.split('.');
-    let value = translations[language];
+    let value = translations[language] || translations['fr'];
 
     for (const k of keys) {
       if (value && typeof value === 'object') {

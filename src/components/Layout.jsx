@@ -8,11 +8,20 @@ function Layout() {
   const location = useLocation()
   const isHome = location.pathname === '/'
   const { t } = useTranslation()
+  const [scrolled, setScrolled] = React.useState(false)
+
+  React.useEffect(() => {
+    const handleScroll = () => setScrolled(window.scrollY > 50)
+    window.addEventListener('scroll', handleScroll)
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
 
   return (
     <div className="min-h-screen flex flex-col bg-atlas-black">
       {/* Header */}
-      <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isHome ? 'bg-gradient-to-b from-black/80 to-transparent' : 'bg-atlas-surface/90 backdrop-blur-md border-b border-white/5'
+      <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isHome
+        ? (scrolled ? 'bg-black/80 backdrop-blur-md border-b border-white/5 py-4' : 'bg-gradient-to-b from-black/80 to-transparent py-6')
+        : 'bg-atlas-surface/90 backdrop-blur-md border-b border-white/5 py-4'
         }`}>
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
@@ -26,7 +35,7 @@ function Layout() {
                   ATLAS AUTO WORKS
                 </h1>
                 <p className="text-[10px] text-atlas-gold tracking-[0.2em] font-medium uppercase">
-                  {t('hero.subtitle') ? t('hero.subtitle').split(' ')[0] : 'PREMIUM'} CUSTOM
+                  {t('hero.subtitle')}
                 </p>
               </div>
             </Link>
@@ -46,10 +55,10 @@ function Layout() {
                 {t('nav.configurator')}
               </Link>
               <a
-                href="#services"
+                href="#features"
                 className="text-gray-300 hover:text-white transition-colors font-medium text-sm tracking-wide"
               >
-                {t('features.title').split(' ')[0]} {/* "Nos" or "Services" fallback */}
+                {t('nav.services')}
               </a>
               <a
                 href="#contact"
@@ -64,7 +73,7 @@ function Layout() {
               to="/configure"
               className="hidden md:flex btn-gold px-6 py-2.5 rounded-full text-sm font-bold text-black shadow-lg shadow-atlas-gold/20 hover:shadow-atlas-gold/40 transition-all transform hover:-translate-y-0.5"
             >
-              {t('hero.cta')}
+              {t('nav.start')}
             </Link>
           </div>
         </div>
@@ -121,7 +130,7 @@ function Layout() {
 
             {/* Services */}
             <div>
-              <h4 className="font-display font-bold text-lg mb-6 text-white">Services</h4>
+              <h4 className="font-display font-bold text-lg mb-6 text-white">{t('nav.services')}</h4>
               <ul className="space-y-3 text-gray-400 text-sm">
                 <li className="hover:text-atlas-gold transition-colors cursor-pointer">{t('features.paint.title')}</li>
                 <li className="hover:text-atlas-gold transition-colors cursor-pointer">{t('features.bodykit.title')}</li>

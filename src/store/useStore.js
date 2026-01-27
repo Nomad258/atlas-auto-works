@@ -53,6 +53,80 @@ const useStore = create((set, get) => ({
   wheelColor: '#1C1C1C',
   setWheelColor: (color) => set({ wheelColor: color }),
 
+  // Wheel model for 3D viewer (product ID for config lookup)
+  wheelProductId: null,
+  setWheelProductId: (productId) => set({ wheelProductId: productId }),
+
+  // Legacy wheel model path (for backwards compatibility)
+  wheelModel: null,
+  setWheelModel: (model) => set({ wheelModel: model }),
+
+  // Body kit product ID for config lookup
+  bodykitProductId: null,
+  setBodykitProductId: (productId) => set({ bodykitProductId: productId }),
+
+  // Body kit components (separate GLB models) - legacy support
+  bodyKitParts: {
+    frontBumper: null,
+    sideskirts: null,
+    rearDiffuser: null,
+    spoiler: null,
+  },
+  setBodyKitPart: (part, model) => set((state) => ({
+    bodyKitParts: { ...state.bodyKitParts, [part]: model }
+  })),
+  clearBodyKitParts: () => set({
+    bodyKitParts: {
+      frontBumper: null,
+      sideskirts: null,
+      rearDiffuser: null,
+      spoiler: null,
+    }
+  }),
+
+  // Interior configuration
+  interiorProductId: null,
+  setInteriorProductId: (productId) => set({ interiorProductId: productId }),
+  interiorColor: null, // Selected color variant
+  setInteriorColor: (color) => set({ interiorColor: color }),
+
+  // Starlight configuration
+  starlightProductId: null,
+  setStarlightProductId: (productId) => set({ starlightProductId: productId }),
+  starlightColor: '#FFFFFF', // RGB color for starlight
+  setStarlightColor: (color) => set({ starlightColor: color }),
+
+  // Accessories - multiple can be selected
+  accessoryProductIds: [],
+  addAccessoryProductId: (productId) => set((state) => ({
+    accessoryProductIds: [...state.accessoryProductIds, productId]
+  })),
+  removeAccessoryProductId: (productId) => set((state) => ({
+    accessoryProductIds: state.accessoryProductIds.filter(id => id !== productId)
+  })),
+  clearAccessoryProductIds: () => set({ accessoryProductIds: [] }),
+
+  // Brake caliper color (for Brembo kit)
+  caliperColor: '#CC0000',
+  setCaliperColor: (color) => set({ caliperColor: color }),
+
+  // Window tint level
+  windowTintLevel: null,
+  setWindowTintLevel: (level) => set({ windowTintLevel: level }),
+
+  // Preview mode - for live preview when hovering products
+  previewMode: {
+    active: false,
+    type: null, // 'paint', 'wrap', 'wheels', etc.
+    value: null, // The preview color/model
+  },
+  setPreview: (type, value) => set({
+    previewMode: { active: true, type, value }
+  }),
+  clearPreview: () => set({
+    previewMode: { active: false, type: null, value: null }
+  }),
+
   // Location visualization
   selectedLocation: 'casablanca',
   setSelectedLocation: (location) => set({ selectedLocation: location }),
@@ -116,6 +190,21 @@ const useStore = create((set, get) => ({
     },
     carColor: '#1C1C1C',
     wheelColor: '#1C1C1C',
+    wheelProductId: null,
+    bodykitProductId: null,
+    bodyKitParts: {
+      frontBumper: null,
+      sideskirts: null,
+      rearDiffuser: null,
+      spoiler: null,
+    },
+    interiorProductId: null,
+    interiorColor: null,
+    starlightProductId: null,
+    starlightColor: '#FFFFFF',
+    accessoryProductIds: [],
+    caliperColor: '#CC0000',
+    windowTintLevel: null,
     quote: null,
     booking: null,
   }),

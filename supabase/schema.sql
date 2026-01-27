@@ -11,7 +11,14 @@ create table if not exists products (
   price decimal not null,
   currency text default 'MAD',
   labor_hours integer default 0,
-  image_url text,
+  image_url text, -- Thumbnail
+  glb_path text, -- Path to 3D model (e.g., /models/...)
+  
+  -- Configuration specs
+  position_offset jsonb, -- [x, y, z]
+  rotation_offset jsonb, -- [x, y, z]
+  scale_factor decimal default 1.0,
+  
   color text,
   finish text,
   warranty text,
