@@ -47,10 +47,15 @@ function ProductCard({ product, isSelected, onSelect, type, onHover, onLeave }) 
               className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
               loading="lazy"
               onError={(e) => {
+                // If image fails, show gradient placeholder
                 e.target.style.display = 'none'
-                // If image fails and has color, show color
+                const parent = e.target.parentElement
                 if (product.color) {
-                  e.target.parentElement.style.backgroundColor = product.color
+                  parent.style.backgroundColor = product.color
+                } else {
+                  parent.classList.add('bg-gradient-to-br', 'from-white/10', 'to-white/0')
+                  parent.innerHTML = `<span class="text-white/30 text-xs tracking-widest uppercase">${product.type || type}</span>`
+                  parent.classList.add('flex', 'items-center', 'justify-center')
                 }
               }}
             />
@@ -62,8 +67,26 @@ function ProductCard({ product, isSelected, onSelect, type, onHover, onLeave }) 
             style={{ backgroundColor: product.color }}
           />
         ) : (
-          <div className="w-full h-32 rounded-lg mb-4 bg-gradient-to-br from-white/5 to-white/0 border border-white/5 flex items-center justify-center">
-            <span className="text-white/20 text-xs tracking-widest uppercase">{product.type || 'Standard'}</span>
+          <div className={`w-full h-32 rounded-lg mb-4 border border-white/5 flex flex-col items-center justify-center relative overflow-hidden ${
+            type === 'wheels' ? 'bg-gradient-to-br from-zinc-800 to-zinc-900' :
+            type === 'bodykits' ? 'bg-gradient-to-br from-slate-800 to-slate-900' :
+            type === 'accessories' ? 'bg-gradient-to-br from-amber-900/30 to-zinc-900' :
+            type === 'interior' ? 'bg-gradient-to-br from-red-900/30 to-zinc-900' :
+            type === 'starlight' ? 'bg-gradient-to-br from-indigo-900/40 to-zinc-900' :
+            'bg-gradient-to-br from-white/5 to-white/0'
+          }`}>
+            {/* Decorative pattern */}
+            <div className="absolute inset-0 opacity-10">
+              <div className="absolute inset-0" style={{
+                backgroundImage: type === 'starlight' 
+                  ? 'radial-gradient(circle at 20% 30%, white 1px, transparent 1px), radial-gradient(circle at 80% 70%, white 1px, transparent 1px), radial-gradient(circle at 50% 50%, white 1px, transparent 1px)'
+                  : 'none',
+                backgroundSize: '30px 30px'
+              }} />
+            </div>
+            <span className="text-white/40 text-xs tracking-widest uppercase font-medium">{product.type || type}</span>
+            {product.size && <span className="text-white/20 text-[10px] mt-1">{product.size}</span>}
+            {product.stars && <span className="text-atlas-gold/50 text-[10px] mt-1">★ {product.stars} stars</span>}
           </div>
         )}
 
