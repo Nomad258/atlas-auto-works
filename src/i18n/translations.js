@@ -41,11 +41,11 @@ export const translations = {
       cta: {
         title: 'Prêt à Construire Votre Héritage ?',
         subtitle: 'Rejoignez le cercle exclusif des connaisseurs automobiles.',
-        button: 'COMMENCER VOTRE CONFIGURATION'
+        button: 'Commencer Votre Configuration'
       },
       vin: {
         placeholder: 'Entrez VIN ou Nom du Modèle...',
-        button: 'COMMENCER LA CONFIGURATION',
+        button: 'Commencer la Configuration',
         quickSelect: {
           m4: 'BMW M4',
           gt3: 'Porsche GT3',
@@ -57,13 +57,19 @@ export const translations = {
     // Navigation
     nav: {
       home: 'Accueil',
-      services: 'SERVICES',
-      studio: 'STUDIO',
-      contact: 'CONTACT',
-      start: 'COMMENCER',
-      exit: 'QUITTER LE STUDIO',
+      configurator: 'Configurateur',
+      services: 'Services',
+      studio: 'Studio',
+      contact: 'Contact',
+      start: 'Commencer',
+      exit: 'Quitter le Studio',
       currentBuild: 'Configuration Actuelle',
       year: 'Année'
+    },
+
+    // Hero section (for navbar subtitle)
+    hero: {
+      subtitle: 'Premium Car Customization'
     },
 
     // Configurator Page
@@ -309,7 +315,7 @@ export const translations = {
         email: 'contact@atlasautoworks.ma'
       },
       hours: {
-        title: 'HORAIRES',
+        title: 'Horaires',
         weekdays: 'Lun - Sam: 9h00 - 19h00'
       },
       copyright: '© 2025 Atlas Auto Works. Tous droits réservés.'
@@ -320,6 +326,11 @@ export const translations = {
       validation: 'Veuillez remplir tous les champs obligatoires.',
       generic: 'Une erreur est survenue. Veuillez réessayer.',
       network: 'Erreur de connexion.'
+    },
+
+    // 3D Viewer
+    viewer3d: {
+      loading: 'Chargement du modèle 3D...'
     }
   }
 };

@@ -137,9 +137,11 @@ function ProductSelector({ category, products, title, description, showSwatches 
     setWheelProductId,
     setBodykitProductId,
     setInteriorProductId,
+    setInteriorColor,
     setStarlightProductId,
     addAccessoryProductId,
     removeAccessoryProductId,
+    setWindowTintLevel,
     setPreview,
     clearPreview
   } = useStore()
@@ -201,9 +203,33 @@ function ProductSelector({ category, products, title, description, showSwatches 
     }
 
     if (category === 'bodykits') setBodykitProductId(product.id)
-    if (category === 'interior') setInteriorProductId(product.id)
+
+    if (category === 'interior') {
+      setInteriorProductId(product.id)
+      // Apply interior color based on product type
+      const interiorColors = {
+        'Complete': '#8B4513',    // Tan leather
+        'Sport': '#1A1A1A',       // Black alcantara
+        'Trim': '#2C2C2C',        // Carbon fiber dark
+        'Steering': '#1A1A1A',    // Black
+        'Lighting': null,         // No color change
+        'Accessories': '#1A1A1A'  // Black
+      }
+      if (product.type && interiorColors[product.type]) {
+        setInteriorColor(interiorColors[product.type])
+      }
+    }
+
     if (category === 'starlight') setStarlightProductId(product.id)
-    if (category === 'accessories') addAccessoryProductId(product.id)
+
+    if (category === 'accessories') {
+      addAccessoryProductId(product.id)
+      // Handle window tint specially
+      if (product.name?.toLowerCase().includes('window tint') || product.type === 'Tint') {
+        // Default to medium tint (35% = 0.35 opacity)
+        setWindowTintLevel(0.35)
+      }
+    }
   }
 
   const handleDeselect = () => {

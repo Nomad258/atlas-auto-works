@@ -17,11 +17,11 @@ const SUPABASE_URL = STORAGE_CONFIG.supabase.baseUrl
 export const bodykitConfigs = {
   'b001': {
     name: 'GT Wing Spoiler',
-    type: 'Spoiler',
+    type: 'spoiler',
     parts: {
       spoiler: {
         glbPath: getPartUrl('bodykits', 'b001'),
-        position: [-1.8, 0.8, 0],
+        position: [0, 1.0, -1.6],  // Top-rear of car
         rotation: [0, 0, 0],
         scale: 1.0
       }
@@ -30,11 +30,11 @@ export const bodykitConfigs = {
 
   'b005': {
     name: 'BMW Body Shell',
-    type: 'Body',
+    type: 'body',
     parts: {
       body: {
         glbPath: getPartUrl('bodykits', 'b005'),
-        position: [0, 0, 0],
+        position: [0, 0.5, 0],
         rotation: [0, 0, 0],
         scale: 1.0
       }
@@ -43,11 +43,11 @@ export const bodykitConfigs = {
 
   'b006': {
     name: 'Carbon Undertray',
-    type: 'Aero',
+    type: 'undertray',
     parts: {
       undertray: {
         glbPath: getPartUrl('bodykits', 'b006'),
-        position: [0, -0.5, 0],
+        position: [0, -0.2, 0],  // Under the car
         rotation: [0, 0, 0],
         scale: 1.0
       }
@@ -56,11 +56,11 @@ export const bodykitConfigs = {
 
   'b007': {
     name: 'Performance Frame',
-    type: 'Structure',
+    type: 'frame',
     parts: {
       frame: {
         glbPath: getPartUrl('bodykits', 'b007'),
-        position: [0, 0, 0],
+        position: [0, 0.2, 0],
         rotation: [0, 0, 0],
         scale: 1.0
       }
@@ -69,11 +69,11 @@ export const bodykitConfigs = {
 
   'b008': {
     name: 'Tinted Windows',
-    type: 'Glass',
+    type: 'window',
     parts: {
       window: {
         glbPath: getPartUrl('bodykits', 'b008'),
-        position: [0, 0, 0],
+        position: [0, 0.8, 0],  // At window level
         rotation: [0, 0, 0],
         scale: 1.0
       }

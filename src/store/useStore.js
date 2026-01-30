@@ -172,7 +172,10 @@ const useStore = create((set, get) => ({
   // Calculate total
   getTotal: () => {
     const items = get().getSelectedItems();
-    return items.reduce((sum, item) => sum + (item.price || 0), 0);
+    return items.reduce((sum, item) => {
+      const price = parseFloat(item?.price) || 0;
+      return sum + price;
+    }, 0);
   },
 
   // Reset all

@@ -20,16 +20,56 @@ function HomePage() {
   const handleVinSubmit = async (e) => {
     e.preventDefault()
     setError('')
-    if (vin.length < 8) {
+
+    // Allow short model names (e.g., "GT3 RS", "M4") or full VINs (17 chars)
+    if (vin.trim().length < 2) {
       setError(t('errors.validation'))
       return
     }
+
     setLoading(true)
     try {
-      const vehicle = await decodeVIN(vin)
-      setVehicle(vehicle)
-      setCurrentStep(1)
-      navigate('/configure')
+      // Check if input looks like a car model name (not a VIN)
+      // VINs are exactly 17 alphanumeric chars, model names have car-related keywords
+      const isModelName = vin.length < 17 ||
+        /M[34]|GT[23]|911|G63|AMG|HURACAN|AVENTADOR|488|F8|R8|RS[0-9]|CAYMAN|PANAMERA/i.test(vin)
+
+      if (isModelName && vin.length < 17) {
+        // Parse model name like "GT3 RS", "M4 COMPETITION", "G63 AMG"
+        let make = 'Porsche'
+        let model = vin.trim()
+
+        // Detect make from input
+        if (/M[34]/i.test(vin)) {
+          make = 'BMW'
+          model = vin.trim()
+        } else if (/G63|AMG/i.test(vin)) {
+          make = 'Mercedes-Benz'
+          model = /G63/i.test(vin) ? 'G63 AMG' : vin.trim()
+        } else if (/GT[23]|911|CAYMAN|PANAMERA/i.test(vin)) {
+          make = 'Porsche'
+          model = vin.trim()
+        } else if (/HURACAN|AVENTADOR/i.test(vin)) {
+          make = 'Lamborghini'
+          model = vin.trim()
+        } else if (/488|F8/i.test(vin)) {
+          make = 'Ferrari'
+          model = vin.trim()
+        } else if (/R8|RS[0-9]/i.test(vin)) {
+          make = 'Audi'
+          model = vin.trim()
+        }
+
+        setVehicle({ make, model, year: 2024, vin: `MANUAL-${vin}` })
+        setCurrentStep(1)
+        navigate('/configure')
+      } else {
+        // Full VIN - decode it
+        const vehicle = await decodeVIN(vin)
+        setVehicle(vehicle)
+        setCurrentStep(1)
+        navigate('/configure')
+      }
     } catch (err) {
       setError(err.message || t('errors.generic'))
     } finally {
@@ -38,10 +78,10 @@ function HomePage() {
   }
 
   const features = [
-    { icon: Palette, title: t('features.paint.title'), desc: t('features.paint.description'), img: 'https://images.unsplash.com/photo-1595758249822-1d7430164c0e?q=80&w=1200&auto=format&fit=crop' },
-    { icon: Car, title: t('features.bodykit.title'), desc: t('features.bodykit.description'), img: 'https://images.unsplash.com/photo-1618764400608-9a71153380eb?q=80&w=1200' },
-    { icon: Settings, title: t('features.wheels.title'), desc: t('features.wheels.description'), img: 'https://images.unsplash.com/photo-1580273916550-e323be2ed5fa?q=80&w=1200' },
-    { icon: Sparkles, title: t('features.starlight.title'), desc: t('features.starlight.description'), img: 'https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?q=80&w=1200' },
+    { icon: Palette, title: t('features.paint.title'), desc: t('features.paint.description'), img: 'https://images.unsplash.com/photo-1619405399517-d7fce0f13302?w=800&q=80' },
+    { icon: Car, title: t('features.bodykit.title'), desc: t('features.bodykit.description'), img: 'https://images.unsplash.com/photo-1544636331-e26879cd4d9b?w=800&q=80' },
+    { icon: Settings, title: t('features.wheels.title'), desc: t('features.wheels.description'), img: 'https://images.unsplash.com/photo-1611859266238-4b98091d9d9b?w=800&q=80' },
+    { icon: Sparkles, title: t('features.starlight.title'), desc: t('features.starlight.description'), img: 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=800&q=80' },
   ]
 
   return (

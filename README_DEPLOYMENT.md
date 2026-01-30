@@ -25,9 +25,9 @@ cp .env.example .env
 Edit the `.env` file and replace the placeholders:
 
 ```env
-VITE_OPENAI_API_KEY=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
+VITE_OPENAI_API_KEY=your-openai-api-key-here
 
-OPENAI_API_KEY=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
+OPENAI_API_KEY=your-openai-api-key-here
 ```
 
 ⚠️ **Security Reminder**: After deployment, consider rotating this API key for security.
@@ -61,9 +61,9 @@ netlify login
 netlify init
 
 # Set environment variables (IMPORTANT!)
-netlify env:set OPENAI_API_KEY "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"
+netlify env:set OPENAI_API_KEY "your-openai-api-key-here"
 
-netlify env:set VITE_OPENAI_API_KEY "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"
+netlify env:set VITE_OPENAI_API_KEY "your-openai-api-key-here"
 
 netlify env:set NODE_VERSION "18"
 
@@ -91,8 +91,8 @@ netlify deploy --prod
 
    | Key | Value |
    |-----|-------|
-   | `OPENAI_API_KEY` | `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` |
-   | `VITE_OPENAI_API_KEY` | `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` |
+   | `OPENAI_API_KEY` | `your-openai-api-key-here` |
+   | `VITE_OPENAI_API_KEY` | `your-openai-api-key-here` |
    | `NODE_VERSION` | `18` |
 
 5. **Deploy**:

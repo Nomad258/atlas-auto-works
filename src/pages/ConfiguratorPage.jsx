@@ -131,8 +131,8 @@ function ConfiguratorPage() {
   return (
     <div className="fixed inset-0 w-full h-full bg-atlas-black overflow-hidden flex flex-col md:flex-row font-body text-white">
 
-      {/* 3D Background */}
-      <div className={`absolute inset-0 transition-all duration-1000 ease-in-out ${currentStep === 0 ? 'scale-110 blur-xl opacity-40' : 'scale-100 opacity-100'}`}>
+      {/* 3D Background - offset to account for right panel */}
+      <div className={`absolute inset-0 transition-all duration-1000 ease-in-out ${currentStep === 0 ? 'scale-110 blur-xl opacity-40' : 'scale-100 opacity-100'} ${isPanelOpen && vehicle && currentStep > 0 ? 'md:right-[500px]' : ''}`}>
         <Car3DViewer />
       </div>
 
