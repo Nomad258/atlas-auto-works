@@ -517,7 +517,7 @@ function BodykitIndicator({ bodykitId, carBounds }) {
   )
 }
 
-// Wheel model loader
+// Wheel model loader with auto-scaling
 function LoadedWheel({ glbPath, position, rotation, color, scale = 1.0 }) {
   const gltf = useGLTF(glbPath)
 
@@ -525,22 +525,38 @@ function LoadedWheel({ glbPath, position, rotation, color, scale = 1.0 }) {
     if (!gltf?.scene) return null
     const scene = gltf.scene.clone()
 
+    // Calculate auto-scale to fit wheel to standard size (~0.4 units radius)
+    const box = new THREE.Box3().setFromObject(scene)
+    const size = box.getSize(new THREE.Vector3())
+    const maxDim = Math.max(size.x, size.y, size.z)
+    const targetSize = 0.8 // Target wheel diameter
+    const autoScale = maxDim > 0 ? targetSize / maxDim : 1
+
     scene.traverse((child) => {
       if (child.isMesh && child.material) {
         child.material = child.material.clone()
         const name = child.name.toLowerCase()
-        if (name.includes('rim') || name.includes('spoke') || name.includes('wheel')) {
-          if (color) {
-            child.material.color = new THREE.Color(color)
-            child.material.metalness = 0.85
-            child.material.roughness = 0.15
-          }
+        // Apply color to rim parts (not tire)
+        const isRim = name.includes('rim') || name.includes('spoke') || name.includes('wheel') || name.includes('hub') || name.includes('center')
+        const isTire = name.includes('tire') || name.includes('tyre') || name.includes('rubber')
+        
+        if (isRim && !isTire && color) {
+          child.material.color = new THREE.Color(color)
+          child.material.metalness = 0.9
+          child.material.roughness = 0.1
         }
       }
     })
 
+    // Apply auto-scale
+    scene.scale.setScalar(autoScale * scale)
+    
+    // Center the wheel
+    const center = box.getCenter(new THREE.Vector3())
+    scene.position.set(-center.x * autoScale * scale, -center.y * autoScale * scale, -center.z * autoScale * scale)
+
     return scene
-  }, [gltf, color])
+  }, [gltf, color, scale])
 
   if (!clonedScene) return null
 
@@ -549,16 +565,27 @@ function LoadedWheel({ glbPath, position, rotation, color, scale = 1.0 }) {
       object={clonedScene}
       position={position}
       rotation={rotation}
-      scale={scale}
     />
   )
 }
 
-// Wheel Assembly
+// Wheel Assembly - renders 4 wheels at correct positions
 function WheelAssembly({ wheelProductId, wheelColor, selectedWheel }) {
-  const glbPath = selectedWheel?.glb_path || selectedWheel?.glbPath || (wheelProductId && wheelConfigs[wheelProductId]?.glbPath)
+  // Get GLB path from config
+  const wheelConfig = wheelProductId ? wheelConfigs[wheelProductId] : null
+  const glbPath = selectedWheel?.glb_path || selectedWheel?.glbPath || wheelConfig?.glbPath
 
-  if (!glbPath) return null
+  useEffect(() => {
+    console.log('🛞 WheelAssembly:', { wheelProductId, glbPath, wheelConfig: wheelConfig?.name })
+  }, [wheelProductId, glbPath, wheelConfig])
+
+  if (!glbPath) {
+    console.warn('⚠️ No wheel GLB path found for:', wheelProductId)
+    return null
+  }
+
+  // Scale factor - most wheel models need scaling to fit the car
+  const scaleFactor = selectedWheel?.scale_factor || wheelConfig?.scale || 0.4
 
   return (
     <group>
@@ -569,7 +596,7 @@ function WheelAssembly({ wheelProductId, wheelColor, selectedWheel }) {
             position={pos.position}
             rotation={pos.rotation}
             color={wheelColor}
-            scale={selectedWheel?.scale_factor || 1.0}
+            scale={scaleFactor}
           />
         </Suspense>
       ))}
