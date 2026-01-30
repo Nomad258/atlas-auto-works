@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Wheel Model Test</title>
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+      }
+    }
+  </script>
+  <style>
+    body { margin: 0; font-family: system-ui; background: #111; color: white; }
+    #info { position: absolute; top: 10px; left: 10px; z-index: 100; }
+    select { padding: 10px; margin: 5px; font-size: 16px; }
+    #canvas { width: 100vw; height: 100vh; }
+  </style>
+</head>
+<body>
+  <div id="info">
+    <h2>Wheel Model Test</h2>
+    <select id="wheelSelect">
+      <option value="/models/wheels/rims/method_305.glb">r001 - Method 305</option>
+      <option value="/models/wheels/rims/method_312.glb">r002 - Method 312</option>
+      <option value="/models/wheels/rims/xd_grenade.glb">r003 - XD Grenade</option>
+      <option value="/models/wheels/rims/xd_machete.glb">r004 - XD Machete</option>
+      <option value="/models/wheels/rims/kmc_terra.glb">r005 - KMC Terra</option>
+      <option value="/models/wheels/rims/fuel_syndicate.glb">r006 - Fuel Syndicate</option>
+      <option value="/models/wheels/rims/rim1.glb">rim1</option>
+      <option value="/models/wheels/rims/rim2.glb">rim2</option>
+      <option value="/models/wheels/rims/rim3.glb">rim3</option>
+      <option value="/models/wheels/rims/bmw_tyre.glb">BMW Tyre</option>
+    </select>
+    <div id="status">Loading...</div>
+  </div>
+  <div id="canvas"></div>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+    const container = document.getElementById('canvas');
+    const status = document.getElementById('status');
+    const select = document.getElementById('wheelSelect');
+
+    // Scene setup
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x222222);
+
+    const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 100);
+    camera.position.set(2, 2, 2);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(window.devicePixelRatio);
+    container.appendChild(renderer.domElement);
+
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+
+    // Lights
+    scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+    const dirLight = new THREE.DirectionalLight(0xffffff, 1);
+    dirLight.position.set(5, 5, 5);
+    scene.add(dirLight);
+
+    // Grid
+    const grid = new THREE.GridHelper(10, 10);
+    scene.add(grid);
+
+    // Loader
+    const loader = new GLTFLoader();
+    let currentModel = null;
+
+    function loadWheel(path) {
+      status.textContent = `Loading: ${path}...`;
+      
+      if (currentModel) {
+        scene.remove(currentModel);
+        currentModel = null;
+      }
+
+      loader.load(
+        path,
+        (gltf) => {
+          currentModel = gltf.scene;
+          
+          // Calculate bounding box
+          const box = new THREE.Box3().setFromObject(currentModel);
+          const size = box.getSize(new THREE.Vector3());
+          const center = box.getCenter(new THREE.Vector3());
+          
+          // Auto-scale to fit
+          const maxDim = Math.max(size.x, size.y, size.z);
+          const scale = 1 / maxDim;
+          currentModel.scale.setScalar(scale);
+          currentModel.position.set(-center.x * scale, -center.y * scale, -center.z * scale);
+          
+          scene.add(currentModel);
+          
+          status.innerHTML = `✅ Loaded: ${path}<br>
+            Original size: ${size.x.toFixed(2)} x ${size.y.toFixed(2)} x ${size.z.toFixed(2)}<br>
+            Scale applied: ${scale.toFixed(4)}<br>
+            Meshes: ${countMeshes(currentModel)}`;
+        },
+        (progress) => {
+          status.textContent = `Loading: ${Math.round(progress.loaded / progress.total * 100)}%`;
+        },
+        (error) => {
+          status.textContent = `❌ Error loading ${path}: ${error.message}`;
+          console.error(error);
+        }
+      );
+    }
+
+    function countMeshes(obj) {
+      let count = 0;
+      obj.traverse((child) => {
+        if (child.isMesh) count++;
+      });
+      return count;
+    }
+
+    select.addEventListener('change', () => {
+      loadWheel(select.value);
+    });
+
+    // Load first wheel
+    loadWheel(select.value);
+
+    // Animation loop
+    function animate() {
+      requestAnimationFrame(animate);
+      controls.update();
+      if (currentModel) {
+        currentModel.rotation.y += 0.005;
+      }
+      renderer.render(scene, camera);
+    }
+    animate();
+
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+  </script>
+</body>
+</html>
