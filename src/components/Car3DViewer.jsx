@@ -604,15 +604,13 @@ function WheelAssembly({ wheelProductId, wheelColor, selectedWheel }) {
   )
 }
 
-// Bodykit Assembly - Uses visual indicator only
-// NOTE: Bodykit GLB files contain wrong models (full car shells instead of parts)
-// Until proper individual part models are available, use wireframe indicator + material effects
+// Bodykit Assembly - DISABLED until proper 3D models available
+// NOTE: Wireframe indicators looked terrible, so we rely on material effects only
+// The LoadedCarModel applies subtle material changes when bodykitProductId is set
 function BodykitAssembly({ bodykitProductId }) {
-  if (!bodykitProductId) return null
-
-  // Use wireframe indicator + material effects (applied in LoadedCarModel)
-  // This provides visual feedback without loading incorrect 3D models
-  return <BodykitIndicator bodykitId={bodykitProductId} />
+  // Return null - bodykits are indicated through UI selection + subtle material effects
+  // TODO: Add proper bodykit 3D models when available
+  return null
 }
 
 // Original BodykitAssembly with 3D loading - disabled until proper GLB files available
