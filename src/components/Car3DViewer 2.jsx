@@ -222,11 +222,6 @@ function LoadedCarModel({ modelPath, color, wheelColor, hideWheels, bodykitId, w
 
         // Apply base body color
         if (isBody && !isWindow && !isWheel && !isLight && !isChrome) {
-          // CRITICAL: Remove base color texture so color applies correctly
-          // Without this, color multiplies with dark texture = dark result
-          if (child.material.map) {
-            child.material.map = null
-          }
           child.material.color = new THREE.Color(color)
           let metalness = 0.6
           let roughness = 0.2
@@ -261,7 +256,6 @@ function LoadedCarModel({ modelPath, color, wheelColor, hideWheels, bodykitId, w
 
           child.material.metalness = metalness
           child.material.roughness = roughness
-          child.material.needsUpdate = true
         }
 
         // Apply window tint if selected
@@ -297,218 +291,84 @@ function LoadedCarModel({ modelPath, color, wheelColor, hideWheels, bodykitId, w
   return <primitive object={scene} />
 }
 
-// Premium visual indicator for bodykit parts - sleek holographic preview
+// Visual indicator for bodykit parts - 3D wireframe outline showing where parts go
 function BodykitIndicator({ bodykitId, carBounds }) {
-  const groupRef = useRef()
-  const glowRef = useRef()
+  const indicatorRef = useRef()
+  const [pulse, setPulse] = useState(0)
 
-  // Subtle breathing animation
+  // Animate the indicator
   useFrame((state) => {
-    if (groupRef.current) {
-      const breathe = Math.sin(state.clock.elapsedTime * 1.5) * 0.02
-      groupRef.current.scale.setScalar(1 + breathe)
-    }
-    if (glowRef.current) {
-      glowRef.current.material.opacity = 0.15 + Math.sin(state.clock.elapsedTime * 2) * 0.05
+    if (indicatorRef.current) {
+      setPulse(Math.sin(state.clock.elapsedTime * 2) * 0.5 + 0.5)
+      indicatorRef.current.material.opacity = 0.3 + pulse * 0.2
     }
   })
 
   if (!bodykitId) return null
 
-  // Premium indicator configs - shaped to match actual parts
+  // Define indicator positions based on bodykit type
   const indicators = {
-    'b001': { // GT Wing Spoiler
-      type: 'spoiler',
-      position: [0, 1.0, -1.8],
-      mainColor: '#00d4ff',
-      glowColor: '#0088ff',
-      label: 'GT Wing Spoiler'
+    'b001': { // Spoiler
+      position: [0, 1.2, -1.8],
+      size: [1.2, 0.15, 0.3],
+      color: '#c4a661',
+      label: 'Spoiler'
     },
-    'b002': { // Sport Front Bumper
-      type: 'bumper',
-      position: [0, 0.25, 2.1],
-      mainColor: '#00d4ff',
-      glowColor: '#0088ff',
-      label: 'Sport Bumper'
+    'b002': { // Front Bumper
+      position: [0, 0.2, 2.0],
+      size: [1.8, 0.4, 0.3],
+      color: '#c4a661',
+      label: 'Front Bumper'
     },
     'b003': { // Wide Body Fenders
-      type: 'widebody',
-      position: [0, 0.4, 0],
-      mainColor: '#00d4ff',
-      glowColor: '#0088ff',
-      label: 'Wide Body Kit'
+      position: [0, 0.5, 0],
+      size: [2.2, 0.6, 4.5],
+      color: '#c4a661',
+      label: 'Wide Body'
     },
-    'b004': { // Carbon Fiber Splitter
-      type: 'splitter',
-      position: [0, 0.05, 2.3],
-      mainColor: '#00d4ff',
-      glowColor: '#0088ff',
-      label: 'Carbon Splitter'
+    'b004': { // Front Splitter
+      position: [0, 0.05, 2.1],
+      size: [1.6, 0.08, 0.4],
+      color: '#c4a661',
+      label: 'Splitter'
     },
     'b005': { // Body Shell
-      type: 'bodykit',
-      position: [0, 0.5, 0],
-      mainColor: '#00d4ff',
-      glowColor: '#0088ff',
-      label: 'Aero Body Kit'
+      position: [0, 0.6, 0],
+      size: [1.9, 0.8, 4.2],
+      color: '#c4a661',
+      label: 'Body Kit'
     },
-    'b006': { // Carbon Undertray
-      type: 'undertray',
+    'b006': { // Undertray
       position: [0, -0.1, 0],
-      mainColor: '#00d4ff',
-      glowColor: '#0088ff',
-      label: 'Carbon Undertray'
-    },
-    'b007': { // Performance Frame
-      type: 'frame',
-      position: [0, 0.3, 0],
-      mainColor: '#00d4ff',
-      glowColor: '#0088ff',
-      label: 'Roll Cage'
-    },
-    'b008': { // Side Skirts
-      type: 'sideskirts',
-      position: [0, 0.15, 0],
-      mainColor: '#00d4ff',
-      glowColor: '#0088ff',
-      label: 'Side Skirts'
+      size: [1.6, 0.05, 3.5],
+      color: '#c4a661',
+      label: 'Undertray'
     }
   }
 
-  const config = indicators[bodykitId]
-  if (!config) return null
-
-  // Render different shapes based on part type
-  const renderPartShape = () => {
-    switch (config.type) {
-      case 'spoiler':
-        return (
-          <group position={config.position}>
-            {/* Wing profile */}
-            <mesh>
-              <boxGeometry args={[1.6, 0.08, 0.35]} />
-              <meshStandardMaterial
-                color={config.mainColor}
-                emissive={config.mainColor}
-                emissiveIntensity={0.3}
-                transparent
-                opacity={0.6}
-                metalness={0.9}
-                roughness={0.1}
-              />
-            </mesh>
-            {/* Uprights */}
-            <mesh position={[-0.5, -0.15, 0]}>
-              <boxGeometry args={[0.06, 0.3, 0.15]} />
-              <meshStandardMaterial color={config.mainColor} emissive={config.mainColor} emissiveIntensity={0.2} transparent opacity={0.5} />
-            </mesh>
-            <mesh position={[0.5, -0.15, 0]}>
-              <boxGeometry args={[0.06, 0.3, 0.15]} />
-              <meshStandardMaterial color={config.mainColor} emissive={config.mainColor} emissiveIntensity={0.2} transparent opacity={0.5} />
-            </mesh>
-            {/* Glow halo */}
-            <mesh ref={glowRef}>
-              <boxGeometry args={[1.8, 0.15, 0.5]} />
-              <meshBasicMaterial color={config.glowColor} transparent opacity={0.15} />
-            </mesh>
-          </group>
-        )
-
-      case 'splitter':
-        return (
-          <group position={config.position}>
-            <mesh>
-              <boxGeometry args={[1.8, 0.03, 0.25]} />
-              <meshStandardMaterial
-                color={config.mainColor}
-                emissive={config.mainColor}
-                emissiveIntensity={0.4}
-                transparent
-                opacity={0.7}
-                metalness={0.95}
-                roughness={0.05}
-              />
-            </mesh>
-            <mesh ref={glowRef} position={[0, -0.02, 0]}>
-              <boxGeometry args={[2.0, 0.08, 0.35]} />
-              <meshBasicMaterial color={config.glowColor} transparent opacity={0.12} />
-            </mesh>
-          </group>
-        )
-
-      case 'sideskirts':
-        return (
-          <group position={config.position}>
-            {/* Left skirt */}
-            <mesh position={[-0.95, 0, 0]}>
-              <boxGeometry args={[0.08, 0.12, 2.8]} />
-              <meshStandardMaterial color={config.mainColor} emissive={config.mainColor} emissiveIntensity={0.3} transparent opacity={0.6} metalness={0.9} roughness={0.1} />
-            </mesh>
-            {/* Right skirt */}
-            <mesh position={[0.95, 0, 0]}>
-              <boxGeometry args={[0.08, 0.12, 2.8]} />
-              <meshStandardMaterial color={config.mainColor} emissive={config.mainColor} emissiveIntensity={0.3} transparent opacity={0.6} metalness={0.9} roughness={0.1} />
-            </mesh>
-            {/* Glow */}
-            <mesh ref={glowRef} position={[-0.95, 0, 0]}>
-              <boxGeometry args={[0.15, 0.2, 3.0]} />
-              <meshBasicMaterial color={config.glowColor} transparent opacity={0.1} />
-            </mesh>
-            <mesh position={[0.95, 0, 0]}>
-              <boxGeometry args={[0.15, 0.2, 3.0]} />
-              <meshBasicMaterial color={config.glowColor} transparent opacity={0.1} />
-            </mesh>
-          </group>
-        )
-
-      case 'bumper':
-        return (
-          <group position={config.position}>
-            <mesh>
-              <boxGeometry args={[1.9, 0.35, 0.3]} />
-              <meshStandardMaterial color={config.mainColor} emissive={config.mainColor} emissiveIntensity={0.25} transparent opacity={0.5} metalness={0.8} roughness={0.2} />
-            </mesh>
-            <mesh ref={glowRef}>
-              <boxGeometry args={[2.1, 0.5, 0.4]} />
-              <meshBasicMaterial color={config.glowColor} transparent opacity={0.1} />
-            </mesh>
-          </group>
-        )
-
-      case 'undertray':
-        return (
-          <group position={config.position}>
-            <mesh rotation={[0, 0, 0]}>
-              <boxGeometry args={[1.8, 0.03, 3.5]} />
-              <meshStandardMaterial color={config.mainColor} emissive={config.mainColor} emissiveIntensity={0.2} transparent opacity={0.4} metalness={0.95} roughness={0.05} />
-            </mesh>
-            <mesh ref={glowRef}>
-              <boxGeometry args={[2.0, 0.08, 3.7]} />
-              <meshBasicMaterial color={config.glowColor} transparent opacity={0.08} />
-            </mesh>
-          </group>
-        )
-
-      default:
-        // Generic bodykit indicator
-        return (
-          <group position={config.position}>
-            <mesh>
-              <boxGeometry args={[2.0, 0.5, 3.8]} />
-              <meshBasicMaterial color={config.mainColor} transparent opacity={0.08} wireframe />
-            </mesh>
-            <mesh ref={glowRef}>
-              <boxGeometry args={[2.1, 0.55, 3.9]} />
-              <meshBasicMaterial color={config.glowColor} transparent opacity={0.05} />
-            </mesh>
-          </group>
-        )
-    }
-  }
+  const indicator = indicators[bodykitId]
+  if (!indicator) return null
 
   return (
-    <group ref={groupRef}>
-      {renderPartShape()}
+    <group position={indicator.position}>
+      <mesh ref={indicatorRef}>
+        <boxGeometry args={indicator.size} />
+        <meshBasicMaterial
+          color={indicator.color}
+          transparent
+          opacity={0.4}
+          wireframe
+        />
+      </mesh>
+      {/* Solid subtle highlight */}
+      <mesh>
+        <boxGeometry args={indicator.size.map(s => s * 0.98)} />
+        <meshBasicMaterial
+          color={indicator.color}
+          transparent
+          opacity={0.08}
+        />
+      </mesh>
     </group>
   )
 }
@@ -573,32 +433,21 @@ function WheelAssembly({ wheelProductId, wheelColor, selectedWheel }) {
   )
 }
 
-// Bodykit Assembly - Uses visual indicator only
-// NOTE: Bodykit GLB files contain wrong models (full car shells instead of parts)
-// Until proper individual part models are available, use wireframe indicator + material effects
+// Bodykit Assembly with auto-scaling
+// TEMPORARILY DISABLED: Bodykit 3D models are placeholders that cause WebGL issues
+// Re-enable when proper bodykit models are available
 function BodykitAssembly({ bodykitProductId }) {
-  if (!bodykitProductId) return null
+  // Disabled for now - bodykit GLB models need proper modeling
+  // The UI will still show bodykit selection, but no 3D model will be added
+  if (bodykitProductId) {
+    console.log('ℹ️ Bodykit selected:', bodykitProductId, '(3D preview disabled - placeholder models)')
+  }
+  return null
 
-  // Use wireframe indicator + material effects (applied in LoadedCarModel)
-  // This provides visual feedback without loading incorrect 3D models
-  return <BodykitIndicator bodykitId={bodykitProductId} />
-}
-
-// Original BodykitAssembly with 3D loading - disabled until proper GLB files available
-/*
-function BodykitAssembly3D({ bodykitProductId }) {
-  const [loadError, setLoadError] = useState(false)
-  const [loadedParts, setLoadedParts] = useState([])
-
-  useEffect(() => {
-    setLoadError(false)
-    setLoadedParts([])
-  }, [bodykitProductId])
-
-  if (!bodykitProductId) return null
-
+  /* Original implementation - uncomment when proper models are ready:
   const config = bodykitConfigs[bodykitProductId]
 
+  // Skip rendering if no valid config found
   if (!config) {
     console.log('⚠️ No bodykit config found for:', bodykitProductId)
     return null
@@ -609,15 +458,12 @@ function BodykitAssembly3D({ bodykitProductId }) {
     return null
   }
 
-  if (loadError) {
-    console.log('⚠️ Bodykit 3D loading failed, showing indicator for:', bodykitProductId)
-    return <BodykitIndicator bodykitId={bodykitProductId} />
-  }
-
+  // Determine part type from config or key name
   const getPartType = (key, config) => {
     if (config.type) {
       return config.type.toLowerCase()
     }
+    // Infer from key name
     if (key.includes('spoiler')) return 'spoiler'
     if (key.includes('splitter')) return 'splitter'
     if (key.includes('diffuser')) return 'diffuser'
@@ -632,10 +478,12 @@ function BodykitAssembly3D({ bodykitProductId }) {
   return (
     <group>
       {Object.entries(config.parts).map(([key, part]) => {
+        // Skip if no GLB path defined
         if (!part.glbPath) {
           console.log('⚠️ Bodykit part has no glbPath:', key)
           return null
         }
+        // Validate the GLB path is a proper URL or path
         if (!part.glbPath.endsWith('.glb') && !part.glbPath.endsWith('.gltf')) {
           console.log('⚠️ Invalid GLB path for bodykit part:', key, part.glbPath)
           return null
@@ -643,31 +491,22 @@ function BodykitAssembly3D({ bodykitProductId }) {
         const partType = getPartType(key, config)
         console.log('🔧 Loading bodykit part:', key, 'from:', part.glbPath)
         return (
-          <GLBErrorBoundary
-            key={key}
-            Fallback={() => null}
-            onError={() => {
-              console.error('⚠️ Error loading bodykit part:', key)
-              setLoadError(true)
-            }}
-          >
-            <Suspense fallback={null}>
-              <SafeLoadedPart
-                glbPath={part.glbPath}
-                position={part.position}
-                rotation={part.rotation}
-                scale={part.scale}
-                partType={partType}
-                autoScale={true}
-              />
-            </Suspense>
-          </GLBErrorBoundary>
+          <Suspense key={key} fallback={null}>
+            <LoadedPart
+              glbPath={part.glbPath}
+              position={part.position}
+              rotation={part.rotation}
+              scale={part.scale}
+              partType={partType}
+              autoScale={true}
+            />
+          </Suspense>
         )
       })}
     </group>
   )
+  */
 }
-*/
 
 // Accessories Assembly
 function AccessoriesAssembly({ accessoryProductIds, caliperColor }) {
@@ -842,9 +681,9 @@ function Car({ vehicle, color, wheelColor, wheelProductId, selectedWheel, bodyki
         />
       )}
 
-      {/* Bodykit 3D models with fallback to wireframe indicator */}
+      {/* Bodykit visual indicator - shows wireframe outline of where bodykit goes */}
       {bodykitProductId && (
-        <BodykitAssembly bodykitProductId={bodykitProductId} />
+        <BodykitIndicator bodykitId={bodykitProductId} />
       )}
 
       {accessoryProductIds && accessoryProductIds.length > 0 && (
