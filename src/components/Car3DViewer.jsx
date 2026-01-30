@@ -1,12 +1,20 @@
 import React, { useRef, useMemo, Suspense, useState, useCallback, useEffect } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { OrbitControls, Environment, ContactShadows, Float, useGLTF, PerspectiveCamera, Stars } from '@react-three/drei'
+import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader'
 import * as THREE from 'three'
 import useStore from '../store/useStore'
 import { getCarModelPath } from '../utils/carModelMapping'
 import { ZoomIn, ZoomOut, RotateCcw } from 'lucide-react'
 import { wheelConfigs, wheelPositions } from '../config/wheelConfigs'
 import { bodykitConfigs, accessoryConfigs } from '../config/partConfigs'
+
+// Configure DRACO decoder for compressed GLB files
+const dracoLoader = new DRACOLoader()
+dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/')
+
+// Extend useGLTF to use DRACO loader
+useGLTF.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/')
 
 // Error boundary for GLB loading failures
 class GLBErrorBoundary extends React.Component {
