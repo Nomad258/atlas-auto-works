@@ -297,7 +297,7 @@ function LoadedCarModel({ modelPath, color, wheelColor, hideWheels, bodykitId, w
   return <primitive object={scene} />
 }
 
-// Premium visual indicator for bodykit parts - sleek holographic preview
+// Premium visual indicator for bodykit parts - positioned on the car
 function BodykitIndicator({ bodykitId, carBounds }) {
   const groupRef = useRef()
   const glowRef = useRef()
@@ -305,56 +305,57 @@ function BodykitIndicator({ bodykitId, carBounds }) {
   // Subtle breathing animation
   useFrame((state) => {
     if (groupRef.current) {
-      const breathe = Math.sin(state.clock.elapsedTime * 1.5) * 0.02
+      const breathe = Math.sin(state.clock.elapsedTime * 1.5) * 0.015
       groupRef.current.scale.setScalar(1 + breathe)
     }
     if (glowRef.current) {
-      glowRef.current.material.opacity = 0.15 + Math.sin(state.clock.elapsedTime * 2) * 0.05
+      glowRef.current.material.opacity = 0.2 + Math.sin(state.clock.elapsedTime * 2) * 0.1
     }
   })
 
   if (!bodykitId) return null
 
-  // Premium indicator configs - shaped to match actual parts
+  // Indicator configs - positions relative to normalized 4-unit car
+  // Car faces -Z direction after rotation, rear is +Z side
   const indicators = {
-    'b001': { // GT Wing Spoiler
+    'b001': { // GT Wing Spoiler - on trunk/rear
       type: 'spoiler',
-      position: [0, 1.0, -1.8],
+      position: [0, 0.85, -1.5],
       mainColor: '#00d4ff',
       glowColor: '#0088ff',
       label: 'GT Wing Spoiler'
     },
     'b002': { // Sport Front Bumper
       type: 'bumper',
-      position: [0, 0.25, 2.1],
+      position: [0, 0.15, 1.9],
       mainColor: '#00d4ff',
       glowColor: '#0088ff',
       label: 'Sport Bumper'
     },
     'b003': { // Wide Body Fenders
       type: 'widebody',
-      position: [0, 0.4, 0],
+      position: [0, 0.35, 0],
       mainColor: '#00d4ff',
       glowColor: '#0088ff',
       label: 'Wide Body Kit'
     },
-    'b004': { // Carbon Fiber Splitter
+    'b004': { // Carbon Fiber Splitter - front low
       type: 'splitter',
-      position: [0, 0.05, 2.3],
+      position: [0, 0.0, 2.0],
       mainColor: '#00d4ff',
       glowColor: '#0088ff',
       label: 'Carbon Splitter'
     },
     'b005': { // Body Shell
       type: 'bodykit',
-      position: [0, 0.5, 0],
+      position: [0, 0.4, 0],
       mainColor: '#00d4ff',
       glowColor: '#0088ff',
       label: 'Aero Body Kit'
     },
     'b006': { // Carbon Undertray
       type: 'undertray',
-      position: [0, -0.1, 0],
+      position: [0, -0.15, 0],
       mainColor: '#00d4ff',
       glowColor: '#0088ff',
       label: 'Carbon Undertray'
@@ -368,7 +369,7 @@ function BodykitIndicator({ bodykitId, carBounds }) {
     },
     'b008': { // Side Skirts
       type: 'sideskirts',
-      position: [0, 0.15, 0],
+      position: [0, 0.05, 0],
       mainColor: '#00d4ff',
       glowColor: '#0088ff',
       label: 'Side Skirts'
@@ -384,32 +385,33 @@ function BodykitIndicator({ bodykitId, carBounds }) {
       case 'spoiler':
         return (
           <group position={config.position}>
-            {/* Wing profile */}
+            {/* Wing blade */}
             <mesh>
-              <boxGeometry args={[1.6, 0.08, 0.35]} />
+              <boxGeometry args={[1.4, 0.06, 0.28]} />
               <meshStandardMaterial
                 color={config.mainColor}
                 emissive={config.mainColor}
-                emissiveIntensity={0.3}
+                emissiveIntensity={0.5}
                 transparent
-                opacity={0.6}
+                opacity={0.8}
                 metalness={0.9}
                 roughness={0.1}
               />
             </mesh>
-            {/* Uprights */}
-            <mesh position={[-0.5, -0.15, 0]}>
-              <boxGeometry args={[0.06, 0.3, 0.15]} />
-              <meshStandardMaterial color={config.mainColor} emissive={config.mainColor} emissiveIntensity={0.2} transparent opacity={0.5} />
+            {/* Left upright */}
+            <mesh position={[-0.5, -0.12, 0]}>
+              <boxGeometry args={[0.05, 0.24, 0.12]} />
+              <meshStandardMaterial color={config.mainColor} emissive={config.mainColor} emissiveIntensity={0.3} transparent opacity={0.7} />
             </mesh>
-            <mesh position={[0.5, -0.15, 0]}>
-              <boxGeometry args={[0.06, 0.3, 0.15]} />
-              <meshStandardMaterial color={config.mainColor} emissive={config.mainColor} emissiveIntensity={0.2} transparent opacity={0.5} />
+            {/* Right upright */}
+            <mesh position={[0.5, -0.12, 0]}>
+              <boxGeometry args={[0.05, 0.24, 0.12]} />
+              <meshStandardMaterial color={config.mainColor} emissive={config.mainColor} emissiveIntensity={0.3} transparent opacity={0.7} />
             </mesh>
-            {/* Glow halo */}
+            {/* Glow effect */}
             <mesh ref={glowRef}>
-              <boxGeometry args={[1.8, 0.15, 0.5]} />
-              <meshBasicMaterial color={config.glowColor} transparent opacity={0.15} />
+              <boxGeometry args={[1.6, 0.12, 0.4]} />
+              <meshBasicMaterial color={config.glowColor} transparent opacity={0.2} />
             </mesh>
           </group>
         )
@@ -418,20 +420,20 @@ function BodykitIndicator({ bodykitId, carBounds }) {
         return (
           <group position={config.position}>
             <mesh>
-              <boxGeometry args={[1.8, 0.03, 0.25]} />
+              <boxGeometry args={[1.7, 0.025, 0.22]} />
               <meshStandardMaterial
                 color={config.mainColor}
                 emissive={config.mainColor}
-                emissiveIntensity={0.4}
+                emissiveIntensity={0.5}
                 transparent
-                opacity={0.7}
+                opacity={0.8}
                 metalness={0.95}
                 roughness={0.05}
               />
             </mesh>
             <mesh ref={glowRef} position={[0, -0.02, 0]}>
-              <boxGeometry args={[2.0, 0.08, 0.35]} />
-              <meshBasicMaterial color={config.glowColor} transparent opacity={0.12} />
+              <boxGeometry args={[1.9, 0.06, 0.3]} />
+              <meshBasicMaterial color={config.glowColor} transparent opacity={0.15} />
             </mesh>
           </group>
         )
@@ -440,23 +442,24 @@ function BodykitIndicator({ bodykitId, carBounds }) {
         return (
           <group position={config.position}>
             {/* Left skirt */}
-            <mesh position={[-0.95, 0, 0]}>
-              <boxGeometry args={[0.08, 0.12, 2.8]} />
-              <meshStandardMaterial color={config.mainColor} emissive={config.mainColor} emissiveIntensity={0.3} transparent opacity={0.6} metalness={0.9} roughness={0.1} />
+            <mesh position={[-0.85, 0, 0]}>
+              <boxGeometry args={[0.06, 0.1, 2.4]} />
+              <meshStandardMaterial color={config.mainColor} emissive={config.mainColor} emissiveIntensity={0.4} transparent opacity={0.7} metalness={0.9} roughness={0.1} />
             </mesh>
             {/* Right skirt */}
-            <mesh position={[0.95, 0, 0]}>
-              <boxGeometry args={[0.08, 0.12, 2.8]} />
-              <meshStandardMaterial color={config.mainColor} emissive={config.mainColor} emissiveIntensity={0.3} transparent opacity={0.6} metalness={0.9} roughness={0.1} />
+            <mesh position={[0.85, 0, 0]}>
+              <boxGeometry args={[0.06, 0.1, 2.4]} />
+              <meshStandardMaterial color={config.mainColor} emissive={config.mainColor} emissiveIntensity={0.4} transparent opacity={0.7} metalness={0.9} roughness={0.1} />
             </mesh>
-            {/* Glow */}
-            <mesh ref={glowRef} position={[-0.95, 0, 0]}>
-              <boxGeometry args={[0.15, 0.2, 3.0]} />
-              <meshBasicMaterial color={config.glowColor} transparent opacity={0.1} />
+            {/* Left glow */}
+            <mesh ref={glowRef} position={[-0.85, 0, 0]}>
+              <boxGeometry args={[0.12, 0.16, 2.6]} />
+              <meshBasicMaterial color={config.glowColor} transparent opacity={0.12} />
             </mesh>
-            <mesh position={[0.95, 0, 0]}>
-              <boxGeometry args={[0.15, 0.2, 3.0]} />
-              <meshBasicMaterial color={config.glowColor} transparent opacity={0.1} />
+            {/* Right glow */}
+            <mesh position={[0.85, 0, 0]}>
+              <boxGeometry args={[0.12, 0.16, 2.6]} />
+              <meshBasicMaterial color={config.glowColor} transparent opacity={0.12} />
             </mesh>
           </group>
         )
@@ -465,12 +468,12 @@ function BodykitIndicator({ bodykitId, carBounds }) {
         return (
           <group position={config.position}>
             <mesh>
-              <boxGeometry args={[1.9, 0.35, 0.3]} />
-              <meshStandardMaterial color={config.mainColor} emissive={config.mainColor} emissiveIntensity={0.25} transparent opacity={0.5} metalness={0.8} roughness={0.2} />
+              <boxGeometry args={[1.7, 0.28, 0.25]} />
+              <meshStandardMaterial color={config.mainColor} emissive={config.mainColor} emissiveIntensity={0.35} transparent opacity={0.6} metalness={0.8} roughness={0.2} />
             </mesh>
             <mesh ref={glowRef}>
-              <boxGeometry args={[2.1, 0.5, 0.4]} />
-              <meshBasicMaterial color={config.glowColor} transparent opacity={0.1} />
+              <boxGeometry args={[1.9, 0.4, 0.35]} />
+              <meshBasicMaterial color={config.glowColor} transparent opacity={0.12} />
             </mesh>
           </group>
         )
@@ -478,36 +481,37 @@ function BodykitIndicator({ bodykitId, carBounds }) {
       case 'undertray':
         return (
           <group position={config.position}>
-            <mesh rotation={[0, 0, 0]}>
-              <boxGeometry args={[1.8, 0.03, 3.5]} />
-              <meshStandardMaterial color={config.mainColor} emissive={config.mainColor} emissiveIntensity={0.2} transparent opacity={0.4} metalness={0.95} roughness={0.05} />
+            <mesh>
+              <boxGeometry args={[1.6, 0.025, 3.2]} />
+              <meshStandardMaterial color={config.mainColor} emissive={config.mainColor} emissiveIntensity={0.3} transparent opacity={0.5} metalness={0.95} roughness={0.05} />
             </mesh>
             <mesh ref={glowRef}>
-              <boxGeometry args={[2.0, 0.08, 3.7]} />
-              <meshBasicMaterial color={config.glowColor} transparent opacity={0.08} />
+              <boxGeometry args={[1.8, 0.06, 3.4]} />
+              <meshBasicMaterial color={config.glowColor} transparent opacity={0.1} />
             </mesh>
           </group>
         )
 
       default:
-        // Generic bodykit indicator
+        // Generic bodykit indicator - outline around car
         return (
           <group position={config.position}>
             <mesh>
-              <boxGeometry args={[2.0, 0.5, 3.8]} />
-              <meshBasicMaterial color={config.mainColor} transparent opacity={0.08} wireframe />
+              <boxGeometry args={[1.8, 0.4, 3.4]} />
+              <meshBasicMaterial color={config.mainColor} transparent opacity={0.1} wireframe />
             </mesh>
             <mesh ref={glowRef}>
-              <boxGeometry args={[2.1, 0.55, 3.9]} />
-              <meshBasicMaterial color={config.glowColor} transparent opacity={0.05} />
+              <boxGeometry args={[1.9, 0.45, 3.5]} />
+              <meshBasicMaterial color={config.glowColor} transparent opacity={0.06} />
             </mesh>
           </group>
         )
     }
   }
 
+  // Apply same rotation as the car model (Math.PI / 5)
   return (
-    <group ref={groupRef}>
+    <group ref={groupRef} rotation={[0, Math.PI / 5, 0]}>
       {renderPartShape()}
     </group>
   )
