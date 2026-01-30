@@ -372,11 +372,13 @@ export const tireConfigs = {
 }
 
 // Wheel positions relative to car body (standard sedan/coupe)
+// Wheel positions for a car scaled to ~4 units length
+// Y offset is wheel center height from ground, Z is track width
 export const wheelPositions = {
-  frontLeft: { position: [1.4, 0, 0.8], rotation: [0, 0, 0] },
-  frontRight: { position: [1.4, 0, -0.8], rotation: [0, Math.PI, 0] },
-  rearLeft: { position: [-1.4, 0, 0.8], rotation: [0, 0, 0] },
-  rearRight: { position: [-1.4, 0, -0.8], rotation: [0, Math.PI, 0] }
+  frontLeft: { position: [1.3, 0.35, 0.85], rotation: [0, 0, 0] },
+  frontRight: { position: [1.3, 0.35, -0.85], rotation: [0, Math.PI, 0] },
+  rearLeft: { position: [-1.3, 0.35, 0.85], rotation: [0, 0, 0] },
+  rearRight: { position: [-1.3, 0.35, -0.85], rotation: [0, Math.PI, 0] }
 }
 
 // Helper functions

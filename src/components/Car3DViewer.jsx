@@ -521,42 +521,58 @@ function BodykitIndicator({ bodykitId, carBounds }) {
 function LoadedWheel({ glbPath, position, rotation, color, scale = 1.0 }) {
   const gltf = useGLTF(glbPath)
 
+  useEffect(() => {
+    if (gltf?.scene) {
+      const box = new THREE.Box3().setFromObject(gltf.scene)
+      const size = box.getSize(new THREE.Vector3())
+      console.log('🔧 Wheel loaded:', glbPath, 'Original size:', size)
+    }
+  }, [gltf, glbPath])
+
   const clonedScene = useMemo(() => {
-    if (!gltf?.scene) return null
+    if (!gltf?.scene) {
+      console.error('❌ No scene in wheel GLTF:', glbPath)
+      return null
+    }
+    
     const scene = gltf.scene.clone()
 
-    // Calculate auto-scale to fit wheel to standard size (~0.4 units radius)
+    // Calculate auto-scale to fit wheel to standard size
     const box = new THREE.Box3().setFromObject(scene)
     const size = box.getSize(new THREE.Vector3())
     const maxDim = Math.max(size.x, size.y, size.z)
-    const targetSize = 0.8 // Target wheel diameter
+    const targetSize = 0.7 // Target wheel diameter (car is ~4 units)
     const autoScale = maxDim > 0 ? targetSize / maxDim : 1
+    
+    console.log('🛞 Wheel scaling:', { maxDim, autoScale, finalScale: autoScale * scale })
 
     scene.traverse((child) => {
       if (child.isMesh && child.material) {
         child.material = child.material.clone()
-        const name = child.name.toLowerCase()
-        // Apply color to rim parts (not tire)
-        const isRim = name.includes('rim') || name.includes('spoke') || name.includes('wheel') || name.includes('hub') || name.includes('center')
-        const isTire = name.includes('tire') || name.includes('tyre') || name.includes('rubber')
-        
-        if (isRim && !isTire && color) {
+        // Make all wheel parts metallic with the selected color
+        if (color) {
           child.material.color = new THREE.Color(color)
-          child.material.metalness = 0.9
-          child.material.roughness = 0.1
+          child.material.metalness = 0.8
+          child.material.roughness = 0.2
         }
+        child.castShadow = true
+        child.receiveShadow = true
       }
     })
 
-    // Apply auto-scale
+    // Apply scale
     scene.scale.setScalar(autoScale * scale)
     
     // Center the wheel
     const center = box.getCenter(new THREE.Vector3())
-    scene.position.set(-center.x * autoScale * scale, -center.y * autoScale * scale, -center.z * autoScale * scale)
+    scene.position.set(
+      -center.x * autoScale * scale, 
+      -center.y * autoScale * scale, 
+      -center.z * autoScale * scale
+    )
 
     return scene
-  }, [gltf, color, scale])
+  }, [gltf, color, scale, glbPath])
 
   if (!clonedScene) return null
 
